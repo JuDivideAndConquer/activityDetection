@@ -1,10 +1,10 @@
 from sklearn.svm import SVC 
 from sklearn.metrics import accuracy_score
 from sklearn.model_selection import GridSearchCV
-from sklearn.utils.fixes import loguniform
+#from scipy.stats import loguniform
 
 def SVM(x_train,y_train,x_test,y_test):
-    params={'C': loguniform(1e0, 1e3),'gamma': loguniform(1e-4, 1e-3),'kernel': ['rbf','linear'],'class_weight':['balanced', None]}
+    params={'C': [1,10],'gamma': [1,10],'kernel': ['rbf','linear'],'class_weight':['balanced', None]}
     svm= SVC()
     clf=GridSearchCV(svm,params)
     clf.fit(x_train, y_train) 
