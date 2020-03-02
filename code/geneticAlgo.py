@@ -20,6 +20,7 @@ def  flip(obj,pos):
                 obj[pos]=1
         else:
                 obj[pos]=0
+        return obj
   
 def geneticAlgo(tot_fts,cur_population,cur_count):
         new_population=list()
@@ -30,14 +31,22 @@ def geneticAlgo(tot_fts,cur_population,cur_count):
                 mutationPoint = Mutation(tot_fts)
 
                 #carrying it out
-                child1=cur_population[i][0:crossOverPoint].extend(cur_population[i+1][crossOverPoint:])
-                child2=cur_population[i+1][0:crossOverPoint].extend(cur_population[i][crossOverPoint:])
+                child1=list()
+                child1.extend(cur_population[i][0:crossOverPoint])
+                child1.extend(cur_population[i+1][crossOverPoint:])
+                child2=list()
+                child2.extend(cur_population[i+1][0:crossOverPoint])
+                child2.extend(cur_population[i][crossOverPoint:])
                 child1=flip(child1,mutationPoint)
                 child2=flip(child2,mutationPoint)
 
                 #adding to new population
-                new_population.add(child1)
-                new_population.add(child2)
-                new_count=new_count+2
+                if child1 not in cur_population and child1 not in new_population:
+                        new_population.append(child1)
+                        new_count+=1
+                elif child2 not in cur_population and child2 not in new_population:
+                        new_population.append(child2)
+                        new_count+=1
+        return new_population,cur_population
 
 
