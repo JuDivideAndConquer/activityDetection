@@ -168,7 +168,7 @@ def runGeneticAlgo(epochs,count=20,tot_fts_count=561):
                 population_old.extend(population_new)
                 accuracy_list.extend(accuracy_list_new)
 
-                accuracy_res,population_res=zip(*sorted(zip(accuracy_list,population_old)))
+                accuracy_res,population_res=zip(*sorted(zip(accuracy_list,population_old),reverse=True))
 
                 population_old=list(population_res[0:20])
                 accuracy_list=list(accuracy_res[0:20])

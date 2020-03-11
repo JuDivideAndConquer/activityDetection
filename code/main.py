@@ -4,5 +4,5 @@ import importlib
 import geneticAlgo
 
 #main
-geneticAlgo.runGeneticAlgo(25)
+geneticAlgo.runGeneticAlgo(15)
 
