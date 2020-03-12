@@ -79,7 +79,10 @@ def odd_fission_SF(i,population,dim,rand_p):
 def odd_fission_PF(i,population,dim,rand_p):
     Nei=neutron_generation(i,i+1,population,dim)
     Pne=round(rand_p+1)
-    theta=theta_calculation(population,i,dim)
+    r=random.randint(0,len(population)-1)
+    while r==i:
+        r=random.randint(0,len(population)-1)
+    theta=theta_calculation(population,r,dim)
     gaussian=Gaussian(population[0],theta,population[i],dim)
     result=list()
     for j in range(dim):
@@ -87,6 +90,20 @@ def odd_fission_PF(i,population,dim,rand_p):
         result.append(temp)
     return result
     
+def even_fission_no_product(i,population,dim):
+    theta=theta_calculation(population,i,dim)
+    gaussian=Gaussian(population[0],theta,population[i],dim)
+    result=list()
+    for j in range(dim):
+        temp=gaussian[j]
+        result.append(temp)
+    return result
+
+
+#------------------------------------------------
+# #Nuclear Fussion Phase (NFu)
+#------------------------------------------------
+# odd nuclei can generate 2 products SF or PF
 
     
 
