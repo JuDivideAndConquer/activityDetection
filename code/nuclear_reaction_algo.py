@@ -105,5 +105,53 @@ def even_fission_no_product(i,population,dim):
 #------------------------------------------------
 # odd nuclei can generate 2 products SF or PF
 
+
+#------------------------------------------eq 14-----------------------------------------
+#pc[i]=rank(fitX[i]Ion)/N
+
+def calculate_Pc(j,population,N,dim,fitX):#how to claculate fitX
+    Pc=list()
+    for k in range(dim):
+        rank_of_jth_pop=rank(fitX[j][k]);#confusion how to claculate the rank function and fitof a popuation is not calculated
+        temp=rank_of_jth_pop/N
+        Pc.append(temp)
+    return Pc;
+
+#---------------------------------------------eq 15----------------------------------------
+#X[j]=X[j]Ion+rand*(X[r1]IOn-X[best]Ion)-e(-norm(Xr1Ion-Xr2Ion)).(Xr1Ion-Xr2Ion)
+from math import exp
+from cmath import phase
+def fusion_stage1(j,population,r1,r2,rand_p,dim):
+    result=list()
+    for i in range(dim):
+        x=phase(population[r1][i],0-population[r2][i])
+        e_pow=0-phase(x)
+        temp=population[j][i]+(rand_p*(population[r1][i]-population[0][i]))+(rand_p*(population[r2][i]-population[0][i]))-(exp(e_pow)*population[r1][i]-population[r2][i])
+        result.append(temp)
+    return result
+
+#----------------------------------------------eq16 &eq17----------------------------------------
+
+def claculate_g(population,k):
+    population_count=len(population)
+    res=0
+    for i in range(population_count):
+        res=res+population[k][i]
+    retrun res
+
+#X[j]Fu=X[j]Ion-0.5(sin(2*pi*freq*g+pi).Gmax-g/Gmax +1)(X[r1]ion-X[r1]ion)...if rand>0.5
+#X[j]Fu=X[j]Ion-0.5(sin(2*pi*freq*g+pi).g/Gmax +1)(X[r1]ion-X[r1]ion)...if rand<=0.5
+from math import sin
+def fusion_stage2(i,population,r1,r2,freq,rand_p):
+    reslut=list()
+    for k in range(dim):
+        g=claculate_g(population,k)
+        if(rand_p>0.5):
+            result=population[i][k]-0.5(sin((2*pi*freq*g)+pi)*((Gmax-g)/Gmax)+1)*(population[r1][k]-population[r2][k])  #confusion what is Gmax
+        else:
+            result=population[i][k]-0.5(sin((2*pi*freq*g)+pi)*((g)/Gmax)+1)*(population[r1][k]-population[r2][k])
+
+
+
     
 
