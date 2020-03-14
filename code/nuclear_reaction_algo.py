@@ -1,5 +1,6 @@
 import random
-from math import pi,exp,log
+from math import pi,exp,log,pow,gamma
+from cmath import phase
 
 '''
     A variable rand_p determines reaction
@@ -119,8 +120,6 @@ def calculate_Pc(j,population,N,dim,fitX):#how to claculate fitX
 
 #---------------------------------------------eq 15----------------------------------------
 #X[j]=X[j]Ion+rand*(X[r1]IOn-X[best]Ion)-e(-norm(Xr1Ion-Xr2Ion)).(Xr1Ion-Xr2Ion)
-from math import exp
-from cmath import phase
 def fusion_stage1(j,population,r1,r2,rand_p,dim):
     result=list()
     for i in range(dim):
@@ -141,17 +140,45 @@ def claculate_g(population,k):
 
 #X[j]Fu=X[j]Ion-0.5(sin(2*pi*freq*g+pi).Gmax-g/Gmax +1)(X[r1]ion-X[r1]ion)...if rand>0.5
 #X[j]Fu=X[j]Ion-0.5(sin(2*pi*freq*g+pi).g/Gmax +1)(X[r1]ion-X[r1]ion)...if rand<=0.5
-from math import sin
 def fusion_stage2(i,population,r1,r2,freq,rand_p):
     reslut=list()
+    Gmax=100
     for k in range(dim):
         g=claculate_g(population,k)
         if(rand_p>0.5):
-            result=population[i][k]-0.5(sin((2*pi*freq*g)+pi)*((Gmax-g)/Gmax)+1)*(population[r1][k]-population[r2][k])  #confusion what is Gmax
+            temp=population[i][k]-0.5(sin((2*pi*freq*g)+pi)*((Gmax-g)/Gmax)+1)*(population[r1][k]-population[r2][k])
         else:
-            result=population[i][k]-0.5(sin((2*pi*freq*g)+pi)*((g)/Gmax)+1)*(population[r1][k]-population[r2][k])
+            temp=population[i][k]-0.5(sin((2*pi*freq*g)+pi)*((g)/Gmax)+1)*(population[r1][k]-population[r2][k])
+        result.append(temp)
+    return result
 
+#-----------------------------------------------eq 22---------------------------------------------
+def calculate_mu_sigma(bita):
+    gamma_1=gamma(bita+1)
+    gamma_2=gamma((bita+1)/2)
+    sin_var=pi*bita/2
+    upper=gamma_1*sin(sin_var)
+    pow_var=(bita-1)/2
+    lower=gamma_2*bita*pow(2,pow_var)
+    total_var=1/bita
+    fract=upper/lower
+    result=pow(fract,total_var)
+    return result
 
+def Levy(bita,mu,v):
+    temp=abs(v)
+    temp2=1/bita
+    lower=pow(temp,temp2)
+    result=mu/lower
+    return result
 
+#X[i]Fu = X[i]Ion+alpha(cross)Levy(beta)(cross)(X[j]Ion-X[best]ion)
+def Levy_distribution_strategy(i,d,alpha,bita,population):
+    sigma_v=1
+    sigma_mu=claculate_mu_sigma(bita)
+    mu=normal_distribution(0,sigma_mu)
+    v=normal_distribution(0,sigma_v)
+    result=population[i][d]+(Xor(alpha,Levy(beta,mu,v))*(population[i][d]-population[0][d]))
+    return result
     
 
