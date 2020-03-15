@@ -136,7 +136,7 @@ def claculate_g(population,k):
     res=0
     for i in range(population_count):
         res=res+population[k][i]
-    retrun res
+    return res
 
 #X[j]Fu=X[j]Ion-0.5(sin(2*pi*freq*g+pi).Gmax-g/Gmax +1)(X[r1]ion-X[r1]ion)...if rand>0.5
 #X[j]Fu=X[j]Ion-0.5(sin(2*pi*freq*g+pi).g/Gmax +1)(X[r1]ion-X[r1]ion)...if rand<=0.5
@@ -172,12 +172,18 @@ def Levy(bita,mu,v):
     result=mu/lower
     return result
 
+def normal_distribution(x, mean, sd):
+    var = float(sd)**2
+    denom = (2*pi*var)**.5
+    num = exp(-(float(x)-float(mean))**2/(2*var))
+    return num/denom
+
 #X[i]Fu = X[i]Ion+alpha(cross)Levy(beta)(cross)(X[j]Ion-X[best]ion)
 def Levy_distribution_strategy(i,d,alpha,bita,population):
     sigma_v=1
     sigma_mu=claculate_mu_sigma(bita)
-    mu=normal_distribution(0,sigma_mu)
-    v=normal_distribution(0,sigma_v)
+    mu=normal_distribution(population[i][d],0,sigma_mu)
+    v=normal_distribution(population[i][d],0,sigma_v)
     result=population[i][d]+(Xor(alpha,Levy(beta,mu,v))*(population[i][d]-population[0][d]))
     return result
     
