@@ -100,6 +100,31 @@ def even_fission_no_product(i,population,dim):
         result.append(temp)
     return result
 
+#------------------------------------------------
+# #Ionization stage
+#------------------------------------------------
+
+#------------------------------------------eq 10-----------------------------------------
+#pa[i]=rank(fitX[i]Fi)/N
+
+def calculate_Pa(j,population,N,dim,fitX):#how to claculate fitX
+    Pa=list()
+    for k in range(dim):
+        rank_of_jth_pop=rank(fitX[j][k]);#confusion how to claculate the rank function and fitof a popuation is not calculated
+        temp=rank_of_jth_pop/N
+        Pa.append(temp)
+    return Pa;
+
+#------------------------------------------------------eq11 &eq 12-------------------------
+
+#X[i][d]ion=X[r1][d]Fi-rand*(X[r2][d]Fi-X[i][d]Fi)...if rand<=0.5
+#X[i][d]ion=X[r1][d]Fi-rand*(X[r2][d]Fi-X[i][d]Fi)...if rand>0.5
+def ionation_stage1(i,d,r1,r2,popuation,rand):
+    if(rand<=0.5):
+        return (popuation[r1][d]+rand*(popuation[r2][d]-popuation[i][d]))
+    else:
+        return (popuation[r1][d]-rand*(popuation[r2][d]-popuation[i][d]))
+
 
 #------------------------------------------------
 # #Nuclear Fussion Phase (NFu)
@@ -140,7 +165,7 @@ def claculate_g(population,k):
 
 #X[j]Fu=X[j]Ion-0.5(sin(2*pi*freq*g+pi).Gmax-g/Gmax +1)(X[r1]ion-X[r1]ion)...if rand>0.5
 #X[j]Fu=X[j]Ion-0.5(sin(2*pi*freq*g+pi).g/Gmax +1)(X[r1]ion-X[r1]ion)...if rand<=0.5
-def fusion_stage2(i,population,r1,r2,freq,rand_p):
+def fusion_stage2(i,population,r1,r2,freq,rand_p,dim):
     reslut=list()
     Gmax=100
     for k in range(dim):
@@ -152,7 +177,7 @@ def fusion_stage2(i,population,r1,r2,freq,rand_p):
         result.append(temp)
     return result
 
-#-----------------------------------------------eq 22---------------------------------------------
+#-----------------------------------------------eq 18---------------------------------------------
 def calculate_mu_sigma(bita):
     gamma_1=gamma(bita+1)
     gamma_2=gamma((bita+1)/2)
@@ -178,7 +203,7 @@ def normal_distribution(x, mean, sd):
     num = exp(-(float(x)-float(mean))**2/(2*var))
     return num/denom
 
-#X[i]Fu = X[i]Ion+alpha(cross)Levy(beta)(cross)(X[j]Ion-X[best]ion)
+#X[i][d]ion=X[i][d]+(alpa(cross)Levy(bita))[d].(X[i][d]-X[best][d])
 def Levy_distribution_strategy(i,d,alpha,bita,population):
     sigma_v=1
     sigma_mu=claculate_mu_sigma(bita)
@@ -186,5 +211,33 @@ def Levy_distribution_strategy(i,d,alpha,bita,population):
     v=normal_distribution(population[i][d],0,sigma_v)
     result=population[i][d]+(Xor(alpha,Levy(beta,mu,v))*(population[i][d]-population[0][d]))
     return result
-    
 
+#-------------------------------------------------eq[21]-----------------------------------------
+
+#X[i][d]Ion=X[i][d]Fi+(alpa(cross)Levy(bita))[d]*(ubd-lbd)
+
+def equ_no_22(i,d,alpha,bita,popuation,ubd,lbd):
+    sigma_v=1
+    sigma_mu=claculate_mu_sigma(bita)
+    mu=normal_distribution(population[i][k],0,sigma_mu)
+    v=normal_distribution(population[i][k],0,sigma_v)
+    x=Xor(alpha,Levy(bita,mu,v))
+    temp=popuation[i][d]+(x*(ubd-lbd))
+    return temp;
+    
+#------------------------------------------------eq 22-----------------------------------------
+
+#X[i]Fu = X[i]Ion+alpha(cross)Levy(bita)(cross)(X[j]Ion-X[best]ion)
+
+def equ_no_22(i,alpha,bita,popuation):
+    result=list()
+    sigma_v=1
+    sigma_mu=claculate_mu_sigma(bita)
+    for k in range(dim):
+        mu=normal_distribution(population[i][k],0,sigma_mu)
+        v=normal_distribution(population[i][k],0,sigma_v)
+        x=Xor(alpha,Levy(bita,mu,v))
+        dif=popuation[i][k]-popuation[0][k];
+        temp=popuation[i][k]+(Xor(x,dif))
+        result.append(temp);
+    return result;
