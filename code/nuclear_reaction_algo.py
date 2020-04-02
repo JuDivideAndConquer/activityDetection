@@ -25,27 +25,19 @@ def init_population(population_count,dim):
 def neutron_generation(i,j,population,dim):
     neutron=list()
     for k in range(dim):
-        temp=(population[i][k]+population[j[k]])/2
+        temp=(population[i][k]+population[j][k])/2
         neutron.append(temp)
     return neutron
 
 #theta calculation
 #balance factor for exploitation and exploration
-def theta_calculation(population,i,dim):
+def theta_calculation(population,i,dim,g):
     population_count=len(population)
     theta=list()
-    mag=0
-    for j in range(dim):
-        temp=(population[i][j]-population[0][j])**2
-        mag=mag+temp
-    mag=mag**(0.5)
-    for j in range(dim):
-        res=0
-        for k in range(population_count):
-            res=res+population[k][i]
-        res=log(res)/res
-        res=res*mag
-        theta.append(res)
+    res=log(g)/g
+    for k in range(dim):
+        temp=res*abs(population[i][k]-population[0][k])
+        theta.append(temp)
     return theta
 
 def Gaussian_1D(mean,theta,x):
@@ -66,10 +58,10 @@ def Gaussian(mean,theta,x,dim): #dim dimension
 # odd nuclei can generate 2 products SF or PF
 
 
-def odd_fission_SF(i,population,dim,rand_p):
+def odd_fission_SF(i,population,dim,rand_p,g):
     Nei=neutron_generation(i,i+1,population,dim)
     Pne=round(rand_p+1)
-    theta=theta_calculation(population,i,dim)
+    theta=theta_calculation(population,i,dim,g)
     gaussian=Gaussian(population[0],theta,population[i],dim)
     result=list()
     for j in range(dim):
@@ -216,7 +208,7 @@ def Levy_distribution_strategy(i,d,alpha,bita,population):
 
 #X[i][d]Ion=X[i][d]Fi+(alpa(cross)Levy(bita))[d]*(ubd-lbd)
 
-def equ_no_22(i,d,alpha,bita,popuation,ubd,lbd):
+def equ_no_21(i,d,alpha,bita,popuation,ubd,lbd):
     sigma_v=1
     sigma_mu=claculate_mu_sigma(bita)
     mu=normal_distribution(population[i][k],0,sigma_mu)
@@ -241,3 +233,68 @@ def equ_no_22(i,alpha,bita,popuation):
         temp=popuation[i][k]+(Xor(x,dif))
         result.append(temp);
     return result;
+
+
+#--------------------------------main fun---------------------------------------------------------
+
+#initialize the value of lb,ub,population_count,Max_iter,g
+Max_iter=15;
+g=0;
+population_count=20;
+lbd=0;
+ubd=1;
+dim=516;
+
+population=list()
+Pa=list()
+#tempory=list()
+population=init_population(population_count,dim)
+
+#----------------------------------------------------------------
+#evaluate the fitness funtion
+#------------------------------------------------------------------
+
+Ne=list()
+while(g<Max_iter):
+    g=g+1;
+    for i in range(population_count):
+        for j in range(i+1,population_count):
+            rand_p=random.randrange(0,1)
+            Ne.append(neutron_generation(i,j,population,dim))
+            population[i]=odd_fission_SF(i,population,dim,rand_p,g)
+            population[i]=odd_fission_PF(i,population,dim,rand_p)
+            population[i]=even_fission_no_product(i,population,dim)
+            #calculate the fit function fitX
+    #NFI phase
+    #Ionization stage
+    alpha=0.01
+    bita=1.5
+    for i in range(population_count):
+        Pa.append(calculate_Pa(i,population,population_count,dim,fitX))#how to claculate FitX
+    for i in range(population_count):
+        for d in range(dim):
+            population[i][d]=Levy_distribution_strategy(i,d,alpha,bita,population)
+            population[i][d]=equ_no_21(i,d,alpha,bita,popuation,ubd,lbd)
+            population[i]=equ_no_22(i,alpha,bita,popuation)
+            population[i][d]=ionation_stage1(i,d,r1,r2,popuation,rand);
+            #popuation[i][d]=#where is equation n0 13 ??
+        #calculate the fit X
+    #Fusion stage
+    Pc=list()
+    for j in range(population_count):
+        Pc.append(calculate_Pc(j,population,population_count,dim,fitX))
+    for i in range(population_count):
+        population[i]=equ_no_22(i,alpha,bita,popuation)
+        population[i]=fusion_stage1(i,population,r1,r2,rand_p,dim)
+        population[i]=fusion_stage2(i,population,r1,r2,freq,rand_p,dim)
+        #calculate the fitness function
+print(population[0])
+
+
+
+
+
+
+
+
+
