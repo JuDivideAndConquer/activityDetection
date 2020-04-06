@@ -2,6 +2,7 @@
 #problem in levy distribution
 #problem in nutron generation
 #problem in sort the population
+#problem in entry wise multiplication
 
 import random
 from math import pi,exp,log,pow,gamma,sin
@@ -342,6 +343,12 @@ Pa=list()
 fitX=list()
 population=init_population(population_count,dim)
 tempory=population;
+column_names=list()
+x_train=list()
+y_train=list()
+x_test=list()
+y_test=list()
+accuracy_list=list()
 
 #reading training/testing datasets
 column_names,x_train,y_train,train_count=read.read('../Data/1/train.csv')
