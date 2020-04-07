@@ -4,6 +4,7 @@
 #problem in sort the population
 #problem in entry wise multiplication
 #equation no 22 in ionation stage
+#rank of fitX
 
 import random
 from math import pi,exp,log,pow,gamma,sin
@@ -138,6 +139,13 @@ def ionation_stage1(i,d,popuation,rand):
 	else:
 		return (popuation[r1][d]-rand*(popuation[r2][d]-popuation[i][d]))
 
+#----------------------------------------------------eq 13-------------------------------------
+#Xion[i][d]=XFi[i][d]+round(rand).rand.(XFi[worst][d]-X[best][d]);
+def equ_no_13(i,d,rand_p,population,dim):
+	result=population[i][d]+round(rand_p)*rand_p*(population[population_count-1][d]-population[0][d])
+	return result
+
+
 
 #------------------------------------------------
 # #Nuclear Fussion Phase (NFu)
@@ -148,7 +156,7 @@ def ionation_stage1(i,d,popuation,rand):
 #------------------------------------------eq 14-----------------------------------------
 #pc[i]=rank(fitX[i]Ion)/N
 
-def calculate_Pc(j,population,N,dim,fitX):#how to claculate fitX
+def calculate_Pc(j,population,N,dim):#how to claculate fitX
     Pc=list()
     for k in range(dim):
         rank_of_jth_pop=j;#confusion how to claculate the rank function and fitof a popuation is not calculated
@@ -346,7 +354,7 @@ def make_feature(population,population_count,dim):
 #--------------------------------main fun---------------------------------------------------------
 
 #initialize the value of lb,ub,population_count,Max_iter,g
-Max_iter=15;
+Max_iter=9;
 g=0;
 population_count=20;
 lbd=0;
@@ -372,14 +380,14 @@ column_names,x_train,y_train,train_count=read.read('../Data/1/train.csv')
 column_names,x_test,y_test,test_count=read.read('../Data/1/test.csv')
 feature_map=make_feature(population,population_count,dim)
 #print(feature_map)
-print("OLD_POPULATION:",np.asarray(population).shape)
-accuracy_list=returnAccuracyList(population_count,x_train,x_test,y_train,y_test,feature_map)
 
 #----------------------------------------------------------------
 #evaluate the fitness funtion
 #------------------------------------------------------------------
+print("OLD_POPULATION:",np.asarray(population).shape)
+accuracy_list=returnAccuracyList(population_count,x_train,x_test,y_train,y_test,feature_map)
 
-fitX=fitness(population,population_count,dim)
+
 Ne=list()
 Pc=list()
 alpha=0.01
@@ -392,8 +400,27 @@ while(g<Max_iter):
 		tempory[i]=odd_fission_SF(i,population,dim,rand_p,g)
 		tempory[i]=odd_fission_PF(i,population,dim,rand_p,g)
 		tempory[i]=even_fission_no_product(i,population,dim,g)
-	fitX=fitness(tempory,population_count,dim)
-	population_new=make_sort(tempory,fitX,population_count)
+	population_new=tempory
+
+
+	#calculate the fit X
+	#========================================================================================================
+
+	print("After Fission:",np.asarray(population).shape)
+	accuracy_list_new=returnAccuracyList(population_count,x_train,x_test,y_train,y_test,population_new)
+	
+	population.extend(population_new)
+	accuracy_list.extend(accuracy_list_new)
+
+	accuracy_res,population_res=zip(*sorted(zip(accuracy_list,population),reverse=True))
+
+	population=list(population_res[0:20])
+	accuracy_list=list(accuracy_res[0:20])
+	print (np.asarray(population).shape,np.asarray(accuracy_list).shape)
+
+	#=======================================================================================================
+
+
 	#NFI phase
 	#Ionization stage
 	for i in range(population_count):
@@ -405,19 +432,35 @@ while(g<Max_iter):
 			tempory[i][d]=equ_no_21(i,d,alpha,bita,population,ubd,lbd)
 			tempory[i]=equ_no_22(i,alpha,bita,population)
 			tempory[i][d]=ionation_stage1(i,d,population,rand);
-			#popuation[i][d]=#where is equation n0 13 ??
-	fitX=fitness(tempory,population_count,dim)
-	population_new=make_sort(tempory,fitX,population_count)
-		#calculate the fit X
+			tempory[i][d]=equ_no_13(i,d,rand,population,dim)
+	population_new=tempory
+	#calculate the fit X
+	#========================================================================================================
+
+	print("After Ionization:",np.asarray(population).shape)
+	accuracy_list_new=returnAccuracyList(population_count,x_train,x_test,y_train,y_test,population_new)
+	
+	population.extend(population_new)
+	accuracy_list.extend(accuracy_list_new)
+
+	accuracy_res,population_res=zip(*sorted(zip(accuracy_list,population),reverse=True))
+
+	population=list(population_res[0:20])
+	accuracy_list=list(accuracy_res[0:20])
+	print (np.asarray(population).shape,np.asarray(accuracy_list).shape)
+
+	#=======================================================================================================
 	#Fusion stage
 	for j in range(population_count):
-		Pc.append(calculate_Pc(j,population,population_count,dim,fitX))
+		Pc.append(calculate_Pc(j,population,population_count,dim))
 	for i in range(population_count):
 		tempory[i]=equ_no_22(i,alpha,bita,population)
 		tempory[i]=fusion_stage1(i,population,rand_p,dim)
 		tempory[i]=fusion_stage2(i,population,freq,rand_p,dim,g)
-	print(fitX)
-		#calculate the fitness function
+	population_new=tempory
+	#calculate the fitness function
+
+	#===========================================================================================================
 	print("NEW_POPULATION:",np.asarray(population).shape)
 	accuracy_list_new=returnAccuracyList(population_count,x_train,x_test,y_train,y_test,population_new)
 	
@@ -429,6 +472,8 @@ while(g<Max_iter):
 	population=list(population_res[0:20])
 	accuracy_list=list(accuracy_res[0:20])
 	print (np.asarray(population).shape,np.asarray(accuracy_list).shape)
+
+	#============================================================================================================
 
 
 
