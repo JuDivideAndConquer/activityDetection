@@ -3,6 +3,7 @@
 #problem in nutron generation
 #problem in sort the population
 #problem in entry wise multiplication
+#equation no 22 in ionation stage
 
 import random
 from math import pi,exp,log,pow,gamma,sin
@@ -27,8 +28,9 @@ def init_population(population_count,dim):
     for i in range(population_count):
         x=list()
         for j in range(dim):
-            x.append(0+random.randrange(0,1)*1)
+            x.append(random.uniform(0, 1))
         population.append(x)
+    #print(population)
     return population
 
 #Heated neutron generation
@@ -326,22 +328,37 @@ def returnAccuracyList(count,x_train,x_test,y_train,y_test,feature_map):
 		accuracy_list.append(accuracy)
 	return accuracy_list
 
+#-------------------------------make features--------------------------------------------------
+
+def make_feature(population,population_count,dim):
+    result=list()
+    for i in range(population_count):
+        x=list()
+        for j in range(dim):
+            if(population[i][j]>=0.5):
+                x.append(1)
+            else:
+                x.append(0)
+        result.append(x)
+    return result
+
 
 #--------------------------------main fun---------------------------------------------------------
 
 #initialize the value of lb,ub,population_count,Max_iter,g
 Max_iter=15;
 g=0;
-population_count=516;
+population_count=20;
 lbd=0;
 ubd=1;
-dim=20;
+dim=516;
 freq=2;
 
 population=list()
 Pa=list()
 fitX=list()
 population=init_population(population_count,dim)
+#print(population)
 tempory=population;
 column_names=list()
 x_train=list()
@@ -353,8 +370,10 @@ accuracy_list=list()
 #reading training/testing datasets
 column_names,x_train,y_train,train_count=read.read('../Data/1/train.csv')
 column_names,x_test,y_test,test_count=read.read('../Data/1/test.csv')
+feature_map=make_feature(population,population_count,dim)
+#print(feature_map)
 print("OLD_POPULATION:",np.asarray(population).shape)
-accuracy_list=returnAccuracyList(dim,x_train,x_test,y_train,y_test,population)
+accuracy_list=returnAccuracyList(population_count,x_train,x_test,y_train,y_test,feature_map)
 
 #----------------------------------------------------------------
 #evaluate the fitness funtion
@@ -373,8 +392,8 @@ while(g<Max_iter):
 		tempory[i]=odd_fission_SF(i,population,dim,rand_p,g)
 		tempory[i]=odd_fission_PF(i,population,dim,rand_p,g)
 		tempory[i]=even_fission_no_product(i,population,dim,g)
-		fitX=fitness(tempory,population_count,dim)
-		population=make_sort(tempory,fitX,population_count)
+	fitX=fitness(tempory,population_count,dim)
+	population_new=make_sort(tempory,fitX,population_count)
 	#NFI phase
 	#Ionization stage
 	for i in range(population_count):
@@ -382,23 +401,34 @@ while(g<Max_iter):
 	for i in range(population_count):
 		for d in range(dim):
 			rand=random.random()
-			population[i][d]=Levy_distribution_strategy(i,d,alpha,bita,population)
-			population[i][d]=equ_no_21(i,d,alpha,bita,population,ubd,lbd)
-			population[i]=equ_no_22(i,alpha,bita,population)
-			population[i][d]=ionation_stage1(i,d,population,rand);
+			tempory[i][d]=Levy_distribution_strategy(i,d,alpha,bita,population)
+			tempory[i][d]=equ_no_21(i,d,alpha,bita,population,ubd,lbd)
+			tempory[i]=equ_no_22(i,alpha,bita,population)
+			tempory[i][d]=ionation_stage1(i,d,population,rand);
 			#popuation[i][d]=#where is equation n0 13 ??
+	fitX=fitness(tempory,population_count,dim)
+	population_new=make_sort(tempory,fitX,population_count)
 		#calculate the fit X
-		fitX=fitness(population,population_count,dim)
 	#Fusion stage
 	for j in range(population_count):
 		Pc.append(calculate_Pc(j,population,population_count,dim,fitX))
 	for i in range(population_count):
-		population[i]=equ_no_22(i,alpha,bita,population)
-		population[i]=fusion_stage1(i,population,rand_p,dim)
-		population[i]=fusion_stage2(i,population,freq,rand_p,dim,g)
+		tempory[i]=equ_no_22(i,alpha,bita,population)
+		tempory[i]=fusion_stage1(i,population,rand_p,dim)
+		tempory[i]=fusion_stage2(i,population,freq,rand_p,dim,g)
+	print(fitX)
 		#calculate the fitness function
-		fitX=fitness(population,population_count,dim)
 	print("NEW_POPULATION:",np.asarray(population).shape)
+	accuracy_list_new=returnAccuracyList(population_count,x_train,x_test,y_train,y_test,population_new)
+	
+	population.extend(population_new)
+	accuracy_list.extend(accuracy_list_new)
+
+	accuracy_res,population_res=zip(*sorted(zip(accuracy_list,population),reverse=True))
+
+	population=list(population_res[0:20])
+	accuracy_list=list(accuracy_res[0:20])
+	print (np.asarray(population).shape,np.asarray(accuracy_list).shape)
 
 
 
