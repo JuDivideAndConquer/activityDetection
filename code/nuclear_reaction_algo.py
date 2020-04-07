@@ -12,6 +12,9 @@ from cmath import phase
 import svm
 import read
 import numpy as np
+from sklearn.model_selection import train_test_split
+import importlib
+import csv
 
 '''
     A variable rand_p determines reaction
@@ -351,15 +354,36 @@ def make_feature(population,population_count,dim):
     return result
 
 
+#------------------------------------save the result------------------------------------------------
+
+#saving the result
+def saveInCSV(feature_id,population,accuracy_list):
+	fname='../Result/NRO2/'+str(feature_id)+'.csv'
+	for i in range(len(population)):
+		with open(fname,mode='a+') as result_file:
+			result_writer=csv.writer(result_file)
+			l=list()
+			l.append(population[i])
+			l.append(accuracy_list[i])
+			result_writer.writerow(l)
+		fname='../Result/NRO2/average.csv'
+		with open(fname,mode='a+') as result_file:
+			result_writer=csv.writer(result_file)
+			l=list()
+			l.append(feature_id)
+			l.append(np.mean(accuracy_list))
+			result_writer.writerow(l)
+
+
 #--------------------------------main fun---------------------------------------------------------
 
 #initialize the value of lb,ub,population_count,Max_iter,g
-Max_iter=9;
+Max_iter=50;
 g=0;
-population_count=20;
+population_count=10;
 lbd=0;
 ubd=1;
-dim=516;
+dim=33;
 freq=2;
 
 population=list()
@@ -376,9 +400,11 @@ y_test=list()
 accuracy_list=list()
 
 #reading training/testing datasets
-column_names,x_train,y_train,train_count=read.read('../Data/1/train.csv')
-column_names,x_test,y_test,test_count=read.read('../Data/1/test.csv')
+column_names,x,y,train_count=read.read('../Data/UCI_DATA-master/Ionosphere/Ionosphere.csv')
+x_train,x_test,y_train,y_test=train_test_split(x, y, test_size=0.20, random_state=1)
+#column_names,x_test,y_test,test_count=read.read('../Data/1/test.csv')
 feature_map=make_feature(population,population_count,dim)
+#print(len(x[0]))
 #print(feature_map)
 
 #----------------------------------------------------------------
@@ -386,7 +412,7 @@ feature_map=make_feature(population,population_count,dim)
 #------------------------------------------------------------------
 print("OLD_POPULATION:",np.asarray(population).shape)
 accuracy_list=returnAccuracyList(population_count,x_train,x_test,y_train,y_test,feature_map)
-
+saveInCSV(g,population,accuracy_list)
 
 Ne=list()
 Pc=list()
@@ -417,6 +443,7 @@ while(g<Max_iter):
 	population=list(population_res[0:20])
 	accuracy_list=list(accuracy_res[0:20])
 	print (np.asarray(population).shape,np.asarray(accuracy_list).shape)
+	saveInCSV(g,population,accuracy_list)
 
 	#=======================================================================================================
 
@@ -448,6 +475,7 @@ while(g<Max_iter):
 	population=list(population_res[0:20])
 	accuracy_list=list(accuracy_res[0:20])
 	print (np.asarray(population).shape,np.asarray(accuracy_list).shape)
+	saveInCSV(g,population,accuracy_list)
 
 	#=======================================================================================================
 	#Fusion stage
@@ -472,6 +500,7 @@ while(g<Max_iter):
 	population=list(population_res[0:20])
 	accuracy_list=list(accuracy_res[0:20])
 	print (np.asarray(population).shape,np.asarray(accuracy_list).shape)
+	saveInCSV(g,population,accuracy_list)
 
 	#============================================================================================================
 
