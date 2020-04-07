@@ -23,8 +23,15 @@ P_fi = 0.5 #probabiltiy of fission reaction
 P_beta = 0.5 #probability of beta decay
 
 
+
 def Xor(a,b):
 	return (a^b)
+#--------------------------------------diracdelta fun------------------------------------------
+
+def diracdelta(x):
+	elep=.000001
+	result=(1/pi)*(elep/(x**2+elep**2))
+	return result
 
 #initializing the population
 def init_population(population_count,dim):
@@ -60,7 +67,7 @@ def theta_calculation(population,i,dim,g):
 
 def Gaussian_1D(mean,theta,x):
 	if(theta==0):
-		return mean
+		return diracdelta(x)
 	exponent=-0.5*((x-mean)/theta)**2
 	coefficient=(theta*((2*pi)**(0.5)))**(-1)
 	result=coefficient*exp(exponent)
