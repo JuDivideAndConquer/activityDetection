@@ -4,5 +4,5 @@ import importlib
 import geneticAlgo
 
 #main
-geneticAlgo.runGeneticAlgo(15)
-
+#geneticAlgo.runGeneticAlgo(15)
+geneticAlgo.weightedGA_plot_graph()
