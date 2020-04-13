@@ -5,9 +5,10 @@
 #problem in entry wise multiplication
 #equation no 22 in ionation stage
 #rank of fitX
+#what is the meaning of norm
 
 import random
-from math import pi,exp,log,pow,gamma,sin
+from math import pi,exp,log,pow,gamma,sin,sqrt
 from cmath import phase
 import svm
 import read
@@ -15,23 +16,27 @@ import numpy as np
 from sklearn.model_selection import train_test_split
 import importlib
 import csv
-
+from scipy.stats import norm
 '''
     A variable rand_p determines reaction
 '''
 P_fi = 0.5 #probabiltiy of fission reaction
-P_beta = 0.5 #probability of beta decay
+P_beta = 0.75 #probability of beta decay
 
 
-
-def Xor(a,b):
-	return (a^b)
 #--------------------------------------diracdelta fun------------------------------------------
 
 def diracdelta(x):
 	elep=.000001
 	result=(1/pi)*(elep/(x**2+elep**2))
+	#print(result)
 	return result
+
+#----------------------------------sigmoid fuhnction-----------------------------------------------s
+
+def sigmoid(x):
+	p=1+exp(-1*x)
+	return (1/p)
 
 #initializing the population
 def init_population(population_count,dim):
@@ -69,8 +74,10 @@ def Gaussian_1D(mean,theta,x):
 	if(theta==0):
 		return diracdelta(x)
 	exponent=-0.5*((x-mean)/theta)**2
-	coefficient=(theta*((2*pi)**(0.5)))**(-1)
+	sqt=sqrt(2*pi)
+	coefficient=1/(theta*sqt)
 	result=coefficient*exp(exponent)
+	#print(result)
 	return result
 
 def Gaussian(mean,theta,x,dim): #dim dimension
@@ -78,6 +85,7 @@ def Gaussian(mean,theta,x,dim): #dim dimension
     for i in range(dim):
         temp=Gaussian_1D(mean[i],theta[i],x[i])
         result.append(temp)
+    #print(result)
     return result
 #------------------------------------------------
 # #Nuclear Fission Phase (NFi)
@@ -94,7 +102,7 @@ def odd_fission_SF(i,population,dim,rand_p,g):
 	gaussian=Gaussian(population[0],theta,population[i],dim)
 	result=list()
 	for j in range(dim):
-		temp=gaussian[j]+rand_p*population[0][j]-Pne*Nei[j]
+		temp=gaussian[j]+(rand_p*population[0][j]-Pne*Nei[j])
 		result.append(temp)
 	return result
 
@@ -120,6 +128,7 @@ def even_fission_no_product(i,population,dim,g):
     for j in range(dim):
         temp=gaussian[j]
         result.append(temp)
+    #print(result)
     return result
 
 #------------------------------------------------
@@ -230,7 +239,7 @@ def Levy(bita,mu,v):
     temp2=1/bita
     lower=pow(temp,temp2)
     if(lower==0):
-    	return lower
+    	lower+=0.0000001
     result=mu/lower
     return result
 
@@ -244,8 +253,8 @@ def normal_distribution(x, mean, sd):
 def Levy_distribution_strategy(i,d,alpha,bita,population):
     sigma_v=1
     sigma_mu=claculate_mu_sigma(bita)
-    mu=normal_distribution(population[i][d],0,sigma_mu)
-    v=normal_distribution(population[i][d],0,sigma_v)
+    mu=norm(0, sigma_mu).cdf(population[i][d])
+    v=norm(0, sigma_v).cdf(population[i][d])
     #print(v)
     result=population[i][d]+(alpha*Levy(bita,mu,v)*(population[i][d]-population[0][d]))
     return result
@@ -334,8 +343,11 @@ def extractFeatures(x_train,x_test,feature_map):
 
 def returnAccuracy(x_train_cur,x_test_cur,y_train,y_test):
 	#training-testing 
-	accuracy=svm.SVM(x_train_cur,y_train,x_test_cur,y_test)
-	return accuracy
+	try:
+		accuracy=svm.SVM(x_train_cur,y_train,x_test_cur,y_test)
+		return accuracy
+	finally:
+		return -100
 
 def returnAccuracyList(count,x_train,x_test,y_train,y_test,feature_map):
 	accuracy_list=list()
@@ -350,14 +362,15 @@ def returnAccuracyList(count,x_train,x_test,y_train,y_test,feature_map):
 
 def make_feature(population,population_count,dim):
     result=list()
+    #print(temp)
     for i in range(population_count):
-        x=list()
-        for j in range(dim):
-            if(population[i][j]>=0.5):
-                x.append(1)
-            else:
-                x.append(0)
-        result.append(x)
+    	x=list()
+    	for j in range(dim):
+    		if(abs(population[i][j])>=0.5):
+    			x.append(1)
+    		else:
+    			x.append(0)
+    	result.append(x)
     return result
 
 
@@ -380,13 +393,22 @@ def saveInCSV(feature_id,population,accuracy_list):
 			l.append(feature_id)
 			l.append(np.mean(accuracy_list))
 			result_writer.writerow(l)
+#------------------------result between 0-1-------------------------------------------------------
+def population_for_f(population,population_count,dim):
+	temp=list()
+	for i in range(population_count):
+		x=list()
+		for j in range(dim):
+			x.append(sigmoid(population[i][j]))
+		temp.append(x)
+	return temp
 
 
 #--------------------------------main fun---------------------------------------------------------
 
 #initialize the value of lb,ub,population_count,Max_iter,g
-Max_iter=50;
-g=0;
+Max_iter=15;
+g=1;
 population_count=10;
 lbd=0;
 ubd=1;
@@ -425,22 +447,28 @@ Ne=list()
 Pc=list()
 alpha=0.01
 bita=1.5
+Pfi=0.5
 while(g<Max_iter):
 	g=g+1;
 	print("ITERATION :",g)
 	for i in range(population_count):
-		rand_p=random.randrange(0,1)
-		tempory[i]=odd_fission_SF(i,population,dim,rand_p,g)
-		tempory[i]=odd_fission_PF(i,population,dim,rand_p,g)
-		tempory[i]=even_fission_no_product(i,population,dim,g)
+		rand_p=random.uniform(0, 1)
+		#print(rand_p,end=" ")
+		if(rand_p>Pfi):
+			if(rand_p>P_beta):
+				tempory[i]=odd_fission_SF(i,population,dim,rand_p,g)
+			else:
+				tempory[i]=odd_fission_PF(i,population,dim,rand_p,g)
+		else:
+			tempory[i]=even_fission_no_product(i,population,dim,g)
 	population_new=tempory
-
-
+	#print(population_new)
 	#calculate the fit X
 	#========================================================================================================
-
+	feature_map=make_feature(population_for_f(population,population_count,dim),population_count,dim)
+	#print(feature_map)
 	print("After Fission:",np.asarray(population).shape)
-	accuracy_list_new=returnAccuracyList(population_count,x_train,x_test,y_train,y_test,population_new)
+	accuracy_list_new=returnAccuracyList(population_count,x_train,x_test,y_train,y_test,feature_map)
 	
 	population.extend(population_new)
 	accuracy_list.extend(accuracy_list_new)
@@ -461,7 +489,7 @@ while(g<Max_iter):
 		Pa.append(calculate_Pa(i,population,population_count,dim,fitX))#how to claculate FitX
 	for i in range(population_count):
 		for d in range(dim):
-			rand=random.random()
+			rand=random.uniform(0, 1)
 			tempory[i][d]=Levy_distribution_strategy(i,d,alpha,bita,population)
 			tempory[i][d]=equ_no_21(i,d,alpha,bita,population,ubd,lbd)
 			tempory[i]=equ_no_22(i,alpha,bita,population)
@@ -470,9 +498,9 @@ while(g<Max_iter):
 	population_new=tempory
 	#calculate the fit X
 	#========================================================================================================
-
+	feature_map=make_feature(population_for_f(population,population_count,dim),population_count,dim)
 	print("After Ionization:",np.asarray(population).shape)
-	accuracy_list_new=returnAccuracyList(population_count,x_train,x_test,y_train,y_test,population_new)
+	accuracy_list_new=returnAccuracyList(population_count,x_train,x_test,y_train,y_test,feature_map)
 	
 	population.extend(population_new)
 	accuracy_list.extend(accuracy_list_new)
@@ -489,6 +517,7 @@ while(g<Max_iter):
 	for j in range(population_count):
 		Pc.append(calculate_Pc(j,population,population_count,dim))
 	for i in range(population_count):
+		rand_p=random.uniform(0, 1)
 		tempory[i]=equ_no_22(i,alpha,bita,population)
 		tempory[i]=fusion_stage1(i,population,rand_p,dim)
 		tempory[i]=fusion_stage2(i,population,freq,rand_p,dim,g)
@@ -496,8 +525,9 @@ while(g<Max_iter):
 	#calculate the fitness function
 
 	#===========================================================================================================
+	feature_map=make_feature(population_for_f(population,population_count,dim),population_count,dim)
 	print("NEW_POPULATION:",np.asarray(population).shape)
-	accuracy_list_new=returnAccuracyList(population_count,x_train,x_test,y_train,y_test,population_new)
+	accuracy_list_new=returnAccuracyList(population_count,x_train,x_test,y_train,y_test,feature_map)
 	
 	population.extend(population_new)
 	accuracy_list.extend(accuracy_list_new)
