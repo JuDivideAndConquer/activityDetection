@@ -110,17 +110,22 @@ def returnAccuracyList(count,x_train,x_test,y_train,y_test,feature_map):
                 accuracy_list.append(accuracy)
         return accuracy_list
 
+def saveInCSV_mini(feature_map,accuracy,fname,feature_id=-1):
+        with open(fname,mode='a+') as result_file:
+                result_writer=csv.writer(result_file)
+                l=list()
+                if(feature_id!=-1):
+                    l.append(feature_id)    
+                l.append(feature_map)
+                l.append(accuracy)
+                result_writer.writerow(l)
+
 #saving the result
 def saveInCSV(feature_id,population,accuracy_list):
-        fname='../Result/GA/'+str(feature_id)+'.csv'
+        fname='../Result/W_GA/'+str(feature_id)+'.csv'
         for i in range(len(population)):
-                with open(fname,mode='a+') as result_file:
-                        result_writer=csv.writer(result_file)
-                        l=list()
-                        l.append(population[i])
-                        l.append(accuracy_list[i])
-                        result_writer.writerow(l)
-        fname='../Result/GA/average.csv'
+                saveInCSV_mini(population[i],accuracy_list[i],fname)
+        fname='../Result/W_GA/average.csv'
         with open(fname,mode='a+') as result_file:
                 result_writer=csv.writer(result_file)
                 l=list()
@@ -176,24 +181,79 @@ def runGeneticAlgo(epochs,count=20,tot_fts_count=561):
 
                 saveInCSV(iteration,population_old,accuracy_list)
                 iteration+=1
-                
 
 
+#running it with GA results
+def weightedGA(tot_fts_count=561,count=20,iteration=15):
+        score=list()
+        for i in range(tot_fts_count):
+                score.append(0)
+        path="../Result/GA/"
+        for i in range(iteration):
+                fname=path+str(i)+".csv"
+                rows=[]
+                with open(fname,'r') as csv_file:
+                        csv_reader=csv.reader(csv_file)
+                        for row in csv_reader:
+                                row=row[0]
+                                row=row.strip('[]').split(', ')
+                                rows.append(row)
+                for j in range(tot_fts_count):
+                        for k in range(count):
+                                score[j]=score[j]+int(rows[k][j])*(i+1)
+
+        maximum=max(score)
+        for i in range(tot_fts_count):
+                score[i]=score[i]*1.0/maximum
+        
+        return score
+
+#testing for peak
+def weightedGA_peak_finding(tot_fts_count=561):
+        score=weightedGA()
+        feature_id=list()
+        for i in range(tot_fts_count):
+                feature_id.append(i)
+        temp=sorted(zip(score,feature_id),reverse=True)
+        score=[x for x,y in temp]
+        feature_id=[y for x,y in temp]
+        
+        #reading training/testing datasets
+        column_names,x_train,y_train,train_count=read.read('../Data/1/train.csv')
+        column_names,x_test,y_test,test_count=read.read('../Data/1/test.csv')
+
+        feature_map=list()
+        for i in range(tot_fts_count):
+                feature_map.append(0)
+        tot_selected_features=0
+        fname='../Result/W_GA/res.csv'
+        for i in range(tot_fts_count):
+                print(i)
+                tot_selected_features+=1
+                feature_map[feature_id[i]]=1
+                x_train_cur,x_test_cur=extractFeatures(x_train,x_test,feature_map)
+                accuracy=returnAccuracy(x_train_cur,x_test_cur,y_train,y_test)
+                saveInCSV_mini(feature_map,accuracy,fname,tot_selected_features)
+
+def weightedGA_plot_graph():
+        import matplotlib
+        matplotlib.use('agg')
+        import matplotlib.pyplot as plt 
+        from pylab import*
+        x=[]
+        y=[]
+        fname='../Result/W_GA/res.csv'
+        with open(fname, 'r') as csvfile:
+                plots= csv.reader(csvfile, delimiter=',')
+                for row in plots:
+                        x.append(int(row[0]))
+                        y.append(float(row[2]))
 
 
-
-
-
-
-
-
-    
-
-
-
-
-
-
-
+        plt.plot(x,y, marker='o')
+        plt.title('Number of features vs Accuracy')
+        plt.xlabel('Number of Features')
+        plt.ylabel('Accuracy')
+        plt.show()
 
 
