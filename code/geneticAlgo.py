@@ -9,6 +9,7 @@ import csv
 import random
 import svm
 import knn
+import lasso_linear_regression
 import read
 import numpy as np 
 from sklearn.model_selection import train_test_split
@@ -100,7 +101,7 @@ def extractFeatures(x_train,x_test,feature_map):
 
 def returnAccuracy(x_train_cur,x_test_cur,y_train,y_test):
         #training-testing 
-        accuracy=knn.knn(x_train_cur,y_train,x_test_cur,y_test)
+        accuracy=lasso_linear_regression.lasso(x_train_cur,y_train,x_test_cur,y_test)
         return accuracy
 
 def returnAccuracyList(count,x_train,x_test,y_train,y_test,feature_map):
