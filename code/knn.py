@@ -1,13 +1,11 @@
 from sklearn.neighbors import KNeighborsClassifier
-def randomforest(x_train,y_train,x_test,y_test):
-	sc = StandardScaler()
-	x_train = sc.fit_transform(x_train)
-	x_test = sc.transform(y_test)
-	regressor = RandomForestRegressor(n_estimators=20, random_state=0)
-	regressor.fit(x_train, y_train)
-	y_pred = regressor.predict(x_test)
-	accuracy = accuracy_score(y_test, y_pred)
-	print(confusion_matrix(y_test,y_pred))
-	print(classification_report(y_test,y_pred))
-	print(accuracy)
+from sklearn.metrics import accuracy_score
+
+def knn(x_train,y_train,x_test,y_test):
+	neigh=KNeighborsClassifier(n_neighbors=3)
+	neigh.fit(x_train,y_train)
+	knn_predictions = neigh.predict(x_test) 
+	accuracy = accuracy_score(y_test,knn_predictions)
+	print ("Accuracy: ",accuracy)
 	return accuracy
+  

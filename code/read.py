@@ -14,7 +14,7 @@ def read(filepath):
             else:
                 temp=list()
                 for i in range (len(row)):
-                    if i == len(row)-1 or i== len(row)-2:
+                    if i == len(row)-1 or i== 0:
                         if i ==len(row) -1:
                             y.append(row[i])
                     else:
