@@ -8,7 +8,7 @@
 #what is the meaning of norm
 
 import random
-from math import pi,exp,log,pow,gamma,sin,sqrt
+from math import pi,log,pow,gamma,sin,sqrt
 from cmath import phase
 import svm
 import read
@@ -17,6 +17,7 @@ from sklearn.model_selection import train_test_split
 import importlib
 import csv
 from scipy.stats import norm
+from numpy import exp
 '''
     A variable rand_p determines reaction
 '''
@@ -35,8 +36,15 @@ def diracdelta(x):
 #----------------------------------sigmoid fuhnction-----------------------------------------------s
 
 def sigmoid(x):
-	p=1+exp(-1*x)
-	return (1/p)
+	#try:
+	return 1/(1+exp(-x))
+	'''finally:
+		#print(x)
+		x=round(x)
+		ex=exp(-1)
+		p=float(ex**x)
+		p+=1
+		return 1/p'''
 
 #initializing the population
 def init_population(population_count,dim):
@@ -53,11 +61,13 @@ def init_population(population_count,dim):
 # Nei <- (xi+xj)/2
 #xi,xj are nuclei
 def neutron_generation(i,j,population,dim):
-    neutron=list()
-    for k in range(dim):
-        temp=(population[i][k]+population[j][k])/2
-        neutron.append(temp)
-    return neutron
+	while(j==i):
+		j=random.randint(0,population_count-1)
+	neutron=list()
+	for k in range(dim):
+		temp=(population[i][k]+population[j][k])/2
+		neutron.append(temp)
+	return neutron
 
 #theta calculation
 #balance factor for exploitation and exploration
@@ -138,12 +148,14 @@ def even_fission_no_product(i,population,dim,g):
 #------------------------------------------eq 10-----------------------------------------
 #pa[i]=rank(fitX[i]Fi)/N
 
-def calculate_Pa(j,population,N,dim,fitX):#how to claculate fitX
+def calculate_Pa(population_count):#how to claculate fitX
     Pa=list()
-    for k in range(dim):
-        rank_of_jth_pop=j#confusion how to claculate the rank function and fitof a popuation is not calculated
-        temp=rank_of_jth_pop/N
+    print(population_count)
+    for i in range(population_count):
+        rank_of_jth_pop=i#confusion how to claculate the rank function and fitof a popuation is not calculated
+        temp=rank_of_jth_pop/population_count
         Pa.append(temp)
+    #print(Pa)
     return Pa;
 
 #------------------------------------------------------eq11 &eq 12-------------------------
@@ -175,10 +187,10 @@ def equ_no_13(i,d,rand_p,population,dim):
 #------------------------------------------eq 14-----------------------------------------
 #pc[i]=rank(fitX[i]Ion)/N
 
-def calculate_Pc(j,population,N,dim):#how to claculate fitX
+def calculate_Pc(N):#how to claculate fitX
     Pc=list()
-    for k in range(dim):
-        rank_of_jth_pop=j;#confusion how to claculate the rank function and fitof a popuation is not calculated
+    for i in range(N):
+        rank_of_jth_pop=i;#confusion how to claculate the rank function and fitof a popuation is not calculated
         temp=rank_of_jth_pop/N
         Pc.append(temp)
     return Pc;
@@ -207,11 +219,10 @@ def claculate_g(population,k):
 
 #X[j]Fu=X[j]Ion-0.5(sin(2*pi*freq*g+pi).Gmax-g/Gmax +1)(X[r1]ion-X[r1]ion)...if rand>0.5
 #X[j]Fu=X[j]Ion-0.5(sin(2*pi*freq*g+pi).g/Gmax +1)(X[r1]ion-X[r1]ion)...if rand<=0.5
-def fusion_stage2(i,population,freq,rand_p,dim,g):
+def fusion_stage2(i,population,freq,rand_p,dim,g,Gmax):
 	r1=random.randint(0,population_count-1)
 	r2=random.randint(0,population_count-1)
 	result=list()
-	Gmax=15
 	for k in range(dim):
 		if(rand_p>0.5):
 			temp=population[i][k]-0.5*(sin((2*pi*freq*g)+pi)*((Gmax-g)/Gmax)+1)*(population[r1][k]-population[r2][k])
@@ -343,11 +354,8 @@ def extractFeatures(x_train,x_test,feature_map):
 
 def returnAccuracy(x_train_cur,x_test_cur,y_train,y_test):
 	#training-testing 
-	try:
-		accuracy=svm.SVM(x_train_cur,y_train,x_test_cur,y_test)
-		return accuracy
-	finally:
-		return -100
+	accuracy=svm.SVM(x_train_cur,y_train,x_test_cur,y_test)
+	return accuracy
 
 def returnAccuracyList(count,x_train,x_test,y_train,y_test,feature_map):
 	accuracy_list=list()
@@ -378,7 +386,7 @@ def make_feature(population,population_count,dim):
 
 #saving the result
 def saveInCSV(feature_id,population,accuracy_list):
-	fname='../Result/NRO2/'+str(feature_id)+'.csv'
+	fname='../Result/Lymphography/'+str(feature_id)+'.csv'
 	for i in range(len(population)):
 		with open(fname,mode='a+') as result_file:
 			result_writer=csv.writer(result_file)
@@ -386,7 +394,7 @@ def saveInCSV(feature_id,population,accuracy_list):
 			l.append(population[i])
 			l.append(accuracy_list[i])
 			result_writer.writerow(l)
-		fname='../Result/NRO2/average.csv'
+		fname='../Result/Lymphography/average.csv'
 		with open(fname,mode='a+') as result_file:
 			result_writer=csv.writer(result_file)
 			l=list()
@@ -407,12 +415,12 @@ def population_for_f(population,population_count,dim):
 #--------------------------------main fun---------------------------------------------------------
 
 #initialize the value of lb,ub,population_count,Max_iter,g
-Max_iter=15;
+Max_iter=100;
 g=1;
-population_count=10;
+population_count=5;
 lbd=0;
 ubd=1;
-dim=33;
+dim=17;
 freq=2;
 
 population=list()
@@ -429,11 +437,14 @@ y_test=list()
 accuracy_list=list()
 
 #reading training/testing datasets
-column_names,x,y,train_count=read.read('../Data/UCI_DATA-master/Ionosphere/Ionosphere.csv')
-x_train,x_test,y_train,y_test=train_test_split(x, y, test_size=0.20, random_state=1)
+#column_names,x,y,train_count=read.read('../Data/UCI_DATA-master/PenglungEW/PenglungEW.csv')
+#x_train,x_test,y_train,y_test=train_test_split(x, y, test_size=0.20, random_state=1)
+#column_names,x_train,y_train,train_count=read.read('../Data/1/train.csv')
 #column_names,x_test,y_test,test_count=read.read('../Data/1/test.csv')
+column_names,x,y,train_count=read.read('../Data/UCI_DATA-master/Lymphography/Lymphography.csv')
+x_train,x_test,y_train,y_test=train_test_split(x, y, test_size=0.20, random_state=1)
+print(len(x_train[0]))
 feature_map=make_feature(population,population_count,dim)
-#print(len(x[0]))
 #print(feature_map)
 
 #----------------------------------------------------------------
@@ -442,6 +453,8 @@ feature_map=make_feature(population,population_count,dim)
 print("OLD_POPULATION:",np.asarray(population).shape)
 accuracy_list=returnAccuracyList(population_count,x_train,x_test,y_train,y_test,feature_map)
 saveInCSV(g,population,accuracy_list)
+#print(population[0][0])
+#print(sigmoid(population[0][0]))
 
 Ne=list()
 Pc=list()
@@ -465,7 +478,7 @@ while(g<Max_iter):
 	#print(population_new)
 	#calculate the fit X
 	#========================================================================================================
-	feature_map=make_feature(population_for_f(population,population_count,dim),population_count,dim)
+	feature_map=make_feature(population_for_f(population_new,population_count,dim),population_count,dim)
 	#print(feature_map)
 	print("After Fission:",np.asarray(population).shape)
 	accuracy_list_new=returnAccuracyList(population_count,x_train,x_test,y_train,y_test,feature_map)
@@ -475,8 +488,8 @@ while(g<Max_iter):
 
 	accuracy_res,population_res=zip(*sorted(zip(accuracy_list,population),reverse=True))
 
-	population=list(population_res[0:20])
-	accuracy_list=list(accuracy_res[0:20])
+	population=list(population_res[0:5])
+	accuracy_list=list(accuracy_res[0:5])
 	print (np.asarray(population).shape,np.asarray(accuracy_list).shape)
 	saveInCSV(g,population,accuracy_list)
 
@@ -485,20 +498,27 @@ while(g<Max_iter):
 
 	#NFI phase
 	#Ionization stage
+	rand=random.uniform(0,1)
+	Pa=calculate_Pa(population_count)
+	#print(Pa)
 	for i in range(population_count):
-		Pa.append(calculate_Pa(i,population,population_count,dim,fitX))#how to claculate FitX
-	for i in range(population_count):
-		for d in range(dim):
-			rand=random.uniform(0, 1)
-			tempory[i][d]=Levy_distribution_strategy(i,d,alpha,bita,population)
-			tempory[i][d]=equ_no_21(i,d,alpha,bita,population,ubd,lbd)
-			tempory[i]=equ_no_22(i,alpha,bita,population)
-			tempory[i][d]=ionation_stage1(i,d,population,rand);
-			tempory[i][d]=equ_no_13(i,d,rand,population,dim)
+		if(rand>Pa[i]):
+			for d in range(dim):
+				if(population[0][d]==population[population_count-1][d]):
+					tempory[i][d]=Levy_distribution_strategy(i,d,alpha,bita,population)
+					tempory[i][d]=equ_no_21(i,d,alpha,bita,tempory,ubd,lbd)
+				else:
+					tempory[i][d]=ionation_stage1(i,d,population,rand)
+		else:
+			for d in range(dim):
+				if(population[0][d]==population[population_count-1][d]):
+					tempory[i]=equ_no_22(i,alpha,bita,population)
+				else:
+					tempory[i][d]=equ_no_13(i,d,rand,population,dim)
 	population_new=tempory
 	#calculate the fit X
 	#========================================================================================================
-	feature_map=make_feature(population_for_f(population,population_count,dim),population_count,dim)
+	feature_map=make_feature(population_for_f(population_new,population_count,dim),population_count,dim)
 	print("After Ionization:",np.asarray(population).shape)
 	accuracy_list_new=returnAccuracyList(population_count,x_train,x_test,y_train,y_test,feature_map)
 	
@@ -507,25 +527,28 @@ while(g<Max_iter):
 
 	accuracy_res,population_res=zip(*sorted(zip(accuracy_list,population),reverse=True))
 
-	population=list(population_res[0:20])
-	accuracy_list=list(accuracy_res[0:20])
+	population=list(population_res[0:5])
+	accuracy_list=list(accuracy_res[0:5])
 	print (np.asarray(population).shape,np.asarray(accuracy_list).shape)
 	saveInCSV(g,population,accuracy_list)
 
 	#=======================================================================================================
 	#Fusion stage
-	for j in range(population_count):
-		Pc.append(calculate_Pc(j,population,population_count,dim))
+	Pc=calculate_Pc(population_count)
+	rand_p=random.uniform(0,1)
 	for i in range(population_count):
-		rand_p=random.uniform(0, 1)
-		tempory[i]=equ_no_22(i,alpha,bita,population)
-		tempory[i]=fusion_stage1(i,population,rand_p,dim)
-		tempory[i]=fusion_stage2(i,population,freq,rand_p,dim,g)
+		if(rand_p<=Pc[i]):
+			if(population[0][d]==population[population_count-1][d]):
+				tempory[i]=equ_no_22(i,alpha,bita,population)
+			else:
+				tempory[i]=fusion_stage2(i,population,freq,rand_p,dim,g,Max_iter)
+		else:
+			tempory[i]=fusion_stage1(i,population,rand_p,dim)
 	population_new=tempory
 	#calculate the fitness function
 
 	#===========================================================================================================
-	feature_map=make_feature(population_for_f(population,population_count,dim),population_count,dim)
+	feature_map=make_feature(population_for_f(population_new,population_count,dim),population_count,dim)
 	print("NEW_POPULATION:",np.asarray(population).shape)
 	accuracy_list_new=returnAccuracyList(population_count,x_train,x_test,y_train,y_test,feature_map)
 	
@@ -534,8 +557,8 @@ while(g<Max_iter):
 
 	accuracy_res,population_res=zip(*sorted(zip(accuracy_list,population),reverse=True))
 
-	population=list(population_res[0:20])
-	accuracy_list=list(accuracy_res[0:20])
+	population=list(population_res[0:5])
+	accuracy_list=list(accuracy_res[0:5])
 	print (np.asarray(population).shape,np.asarray(accuracy_list).shape)
 	saveInCSV(g,population,accuracy_list)
 
