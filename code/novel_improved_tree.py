@@ -129,6 +129,16 @@ def returnAccuracyList(count,x_train,x_test,y_train,y_test,feature_map):
 		accuracy_list.append(accuracy)
 	return accuracy_list
 
+#------------------------result between 0-1-------------------------------------------------------
+def population_for_f(population,population_count,dim):
+	temp=list()
+	for i in range(population_count):
+		x=list()
+		for j in range(dim):
+			x.append(sigmoid(population[i][j]))
+		temp.append(x)
+	return temp
+
 
 #--------------------------------------------main fun-----------------------------
 
@@ -165,7 +175,7 @@ while(g<Max_iter):
 	theta=calculate_theta(g,Max_iter)
 	for i in range(N1):
 		population_new[i]=update_population(dim,population,theta,i)
-	feature_map=make_feature(population_new,population_count,dim)
+	feature_map=make_feature(population_for_f(population_new,N1,dim),N1,dim)
 	#print(feature_map)
 	for i in range(N1):
 		x_train_cur,x_test_cur=extractFeatures(x_train,x_test,feature_map[i])
@@ -183,15 +193,33 @@ while(g<Max_iter):
 			if(distance1[d]==distance[1]):
 				x2=population[i][d]
 		y=lemda*x1+(1-lemda)*x2
-		population_new[i]=update_population1(N2,alfa,y)
-	for i in range(N1,N1+N2):
+		population_new[i-N1]=update_population1(N2,alfa,y)
+	feature_map=make_feature(population_for_f(population_new,N2,dim),N2,dim)
+	for i in range(0,N2):
 		x_train_cur,x_test_cur=extractFeatures(x_train,x_test,feature_map[i])
 		accuracy=returnAccuracy(x_train_cur,x_test_cur,y_train,y_test)
-		if(accuracy>accuracy_list[i]):
-			population[i]=population_new[i]
-			accuracy_list[i]=accuracy
-	for i in range(N2+N1,population_count):
+		if(accuracy>accuracy_list[i+N1]):
+			population[i+N1]=population_new[i]
+			accuracy_list[i+N1]=accuracy
+	for i in range(0,population_count):
 		population_new[i]=update_population(dim,population,theta,i)
+	#==========================================================================================================
+	feature_map=make_feature(population_for_f(population_new,population_count,dim),population_count,dim)
+	#print(feature_map)
+	print("After Fission:",np.asarray(population).shape)
+	accuracy_list_new=returnAccuracyList(population_count,x_train,x_test,y_train,y_test,feature_map)
+	
+	population.extend(population_new)
+	accuracy_list.extend(accuracy_list_new)
+
+	accuracy_res,population_res=zip(*sorted(zip(accuracy_list,population),reverse=True))
+
+	population=list(population_res[0:5])
+	accuracy_list=list(accuracy_res[0:5])
+	print (np.asarray(population).shape,np.asarray(accuracy_list).shape)
+	#=========================================================================================================
+
+
 
 
 

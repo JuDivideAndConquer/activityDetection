@@ -1,14 +1,6 @@
-#problem a gaussina distribution
-#problem in levy distribution
-#problem in nutron generation
-#problem in sort the population
-#problem in entry wise multiplication
-#equation no 22 in ionation stage
-#rank of fitX
-#what is the meaning of norm
 
 import random
-from math import pi,log,pow,gamma,sin,sqrt
+from math import pi,log,pow,gamma,sin,sqrt,exp
 from cmath import phase
 import svm
 import read
@@ -17,7 +9,6 @@ from sklearn.model_selection import train_test_split
 import importlib
 import csv
 from scipy.stats import norm
-from numpy import exp
 '''
     A variable rand_p determines reaction
 '''
@@ -35,16 +26,12 @@ def diracdelta(x):
 
 #----------------------------------sigmoid fuhnction-----------------------------------------------s
 
-def sigmoid(x):
-	#try:
-	return 1/(1+exp(-x))
-	'''finally:
-		#print(x)
-		x=round(x)
-		ex=exp(-1)
-		p=float(ex**x)
-		p+=1
-		return 1/p'''
+def sigmoid(gamma):
+    #print(gamma)
+    if gamma < 0:
+        return 1 - 1/(1 + exp(gamma))
+    else:
+        return 1/(1 + exp(-gamma))
 
 #initializing the population
 def init_population(population_count,dim):
