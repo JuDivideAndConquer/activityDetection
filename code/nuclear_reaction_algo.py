@@ -340,7 +340,7 @@ def extractFeatures(x_train,x_test,feature_map):
 
 
 def returnAccuracy(x_train_cur,x_test_cur,y_train,y_test):
-	#training-testing 
+	#training-testing
 	accuracy=svm.SVM(x_train_cur,y_train,x_test_cur,y_test)
 	return accuracy
 
@@ -373,7 +373,7 @@ def make_feature(population,population_count,dim):
 
 #saving the result
 def saveInCSV(feature_id,population,accuracy_list):
-	fname='../Result/Lymphography/'+str(feature_id)+'.csv'
+	fname='../Result/Sonar1/'+str(feature_id)+'.csv'
 	for i in range(len(population)):
 		with open(fname,mode='a+') as result_file:
 			result_writer=csv.writer(result_file)
@@ -381,7 +381,7 @@ def saveInCSV(feature_id,population,accuracy_list):
 			l.append(population[i])
 			l.append(accuracy_list[i])
 			result_writer.writerow(l)
-		fname='../Result/Lymphography/average.csv'
+		fname='../Result/Sonar1/average.csv'
 		with open(fname,mode='a+') as result_file:
 			result_writer=csv.writer(result_file)
 			l=list()
@@ -402,12 +402,12 @@ def population_for_f(population,population_count,dim):
 #--------------------------------main fun---------------------------------------------------------
 
 #initialize the value of lb,ub,population_count,Max_iter,g
-Max_iter=100;
+Max_iter=50;
 g=1;
-population_count=5;
+population_count=10;
 lbd=0;
 ubd=1;
-dim=17;
+dim=59;
 freq=2;
 
 population=list()
@@ -428,7 +428,7 @@ accuracy_list=list()
 #x_train,x_test,y_train,y_test=train_test_split(x, y, test_size=0.20, random_state=1)
 #column_names,x_train,y_train,train_count=read.read('../Data/1/train.csv')
 #column_names,x_test,y_test,test_count=read.read('../Data/1/test.csv')
-column_names,x,y,train_count=read.read('../Data/UCI_DATA-master/Lymphography/Lymphography.csv')
+column_names,x,y,train_count=read.read('../Data/UCI_DATA-master/Sonar/Sonar.csv')
 x_train,x_test,y_train,y_test=train_test_split(x, y, test_size=0.20, random_state=1)
 print(len(x_train[0]))
 feature_map=make_feature(population,population_count,dim)
@@ -475,8 +475,8 @@ while(g<Max_iter):
 
 	accuracy_res,population_res=zip(*sorted(zip(accuracy_list,population),reverse=True))
 
-	population=list(population_res[0:5])
-	accuracy_list=list(accuracy_res[0:5])
+	population=list(population_res[0:10])
+	accuracy_list=list(accuracy_res[0:10])
 	print (np.asarray(population).shape,np.asarray(accuracy_list).shape)
 	saveInCSV(g,population,accuracy_list)
 
@@ -514,8 +514,8 @@ while(g<Max_iter):
 
 	accuracy_res,population_res=zip(*sorted(zip(accuracy_list,population),reverse=True))
 
-	population=list(population_res[0:5])
-	accuracy_list=list(accuracy_res[0:5])
+	population=list(population_res[0:10])
+	accuracy_list=list(accuracy_res[0:10])
 	print (np.asarray(population).shape,np.asarray(accuracy_list).shape)
 	saveInCSV(g,population,accuracy_list)
 
@@ -544,8 +544,8 @@ while(g<Max_iter):
 
 	accuracy_res,population_res=zip(*sorted(zip(accuracy_list,population),reverse=True))
 
-	population=list(population_res[0:5])
-	accuracy_list=list(accuracy_res[0:5])
+	population=list(population_res[0:10])
+	accuracy_list=list(accuracy_res[0:10])
 	print (np.asarray(population).shape,np.asarray(accuracy_list).shape)
 	saveInCSV(g,population,accuracy_list)
 
