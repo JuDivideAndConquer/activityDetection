@@ -140,6 +140,25 @@ def population_for_f(population,population_count,dim):
 		temp.append(x)
 	#print(temp)
 	return temp
+#------------------------------------save the result------------------------------------------------
+
+#saving the result
+def saveInCSV(feature_id,population,accuracy_list):
+	fname='../result1/Lymphography/'+str(feature_id)+'.csv'
+	for i in range(len(population)):
+		with open(fname,mode='a+') as result_file:
+			result_writer=csv.writer(result_file)
+			l=list()
+			l.append(population[i])
+			l.append(accuracy_list[i])
+			result_writer.writerow(l)
+		fname='../result1/Lymphography/average.csv'
+		with open(fname,mode='a+') as result_file:
+			result_writer=csv.writer(result_file)
+			l=list()
+			l.append(feature_id)
+			l.append(np.mean(accuracy_list))
+			result_writer.writerow(l)
 
 
 #--------------------------------------------main fun-----------------------------
@@ -147,10 +166,10 @@ def population_for_f(population,population_count,dim):
 Max_iter=50
 g=0
 population_count=10
-dim=59
+dim=17
 population=init_population(population_count,dim)
 #reading training/testing datasets
-column_names,x,y,train_count=read.read('../Data/UCI_DATA-master/Sonar/Sonar.csv')
+column_names,x,y,train_count=read.read('../Data/UCI_DATA-master/Lymphography/Lymphography.csv')
 x_train,x_test,y_train,y_test=train_test_split(x, y, test_size=0.20, random_state=1)
 print(len(x_train[0]))
 
@@ -159,6 +178,7 @@ feature_map=make_feature(population,population_count,dim)
 #print(len(x[0]))
 print("OLD_POPULATION:",np.asarray(population).shape)
 accuracy_list=returnAccuracyList(population_count,x_train,x_test,y_train,y_test,feature_map)
+saveInCSV(g,population,accuracy_list)
 #print(accuracy_list)
 accuracy_res,population_res=zip(*sorted(zip(accuracy_list,population),reverse=True))
 population=list(population_res[0:10])
@@ -230,6 +250,7 @@ while(g<Max_iter):
 	population=list(population_res[0:10])
 	accuracy_list=list(accuracy_res[0:10])
 	print (np.asarray(population).shape,np.asarray(accuracy_list).shape)
+	saveInCSV(g,population,accuracy_list)
 	#=========================================================================================================
 
 
