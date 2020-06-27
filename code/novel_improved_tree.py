@@ -1,5 +1,5 @@
 import random
-from math import pi,log,pow,gamma,sin,sqrt,inf
+from math import pi,log,pow,gamma,sin,sqrt,inf,exp
 from cmath import phase
 import svm
 import read
@@ -12,15 +12,12 @@ from numpy import exp
 
 #----------------------------------sigmoid fuhnction-----------------------------------------------s
 
-def sigmoid(x):
-	return exp(x)/(1+exp(x))
-	'''finally:
-		#print(x)
-		x=round(x)
-		ex=exp(-1)
-		p=float(ex**x)
-		p+=1
-		return 1/p'''
+def sigmoid(gamma):
+	#print(gamma)
+	if gamma < 0:
+		return 1 - 1/(1 + exp(gamma))
+	else:
+		return 1/(1 + exp(-gamma))
 
 
 #-------------------------calculate theta--------------------------------------
@@ -153,7 +150,7 @@ x_train,x_test,y_train,y_test=train_test_split(x, y, test_size=0.20, random_stat
 print(len(x_train[0]))
 
 feature_map=make_feature(population,population_count,dim)
-#print(len(x[0]))
+print(len(x[0]))
 print("OLD_POPULATION:",np.asarray(population).shape)
 accuracy_list=returnAccuracyList(population_count,x_train,x_test,y_train,y_test,feature_map)
 #print(accuracy_list)
@@ -214,8 +211,8 @@ while(g<Max_iter):
 
 	accuracy_res,population_res=zip(*sorted(zip(accuracy_list,population),reverse=True))
 
-	population=list(population_res[0:5])
-	accuracy_list=list(accuracy_res[0:5])
+	population=list(population_res[0:10])
+	accuracy_list=list(accuracy_res[0:10])
 	print (np.asarray(population).shape,np.asarray(accuracy_list).shape)
 	#=========================================================================================================
 
