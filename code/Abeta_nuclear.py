@@ -563,7 +563,7 @@ accuracy_list=list()
 #reading training/testing datasets
 #column_names,x_train,y_train,train_count=read.read('../Data/1/train.csv')
 #column_names,x_test,y_test,test_count=read.read('../Data/1/test.csv')
-column_names,x,y,train_count=read.read('../Data/UCI_DATA-master/Sonar/Sonar.csv')
+column_names,x,y,train_count=read.read('../Data/UCI_DATA-master/BreastEW/BreastEW.csv')
 x_train,x_test,y_train,y_test=train_test_split(x, y, test_size=0.20, random_state=1)
 print(len(x_train[0]))
 feature_map=make_feature(population,population_count,dim)

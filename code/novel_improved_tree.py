@@ -24,6 +24,7 @@ def sigmoid(gamma):
 
 def calculate_theta(g,G):
 	theta=0.5*(1+(3*g)/G)
+	print(theta)
 	return theta
 
 
@@ -58,10 +59,9 @@ def init_population(population_count,dim):
 #-----------------------------update population---------------------------------------
 
 def update_population(dim,population,theta,i):
-	r=random.uniform(0,1)
 	result=list()
 	for d in range(dim):
-		temp=population[i][d]/theta+r*population[i][d]
+		temp=population[i][d]/theta+random.uniform(0,1)*population[i][d]
 		result.append(temp)
 	return result
 
@@ -79,11 +79,15 @@ def update_population1(i,alfa,y):
 
 def make_feature(population,population_count,dim):
     result=list()
-    #print(temp)
+    di=1/dim
     for i in range(population_count):
     	x=list()
-    	for j in range(dim):
-    		if(abs(population[i][j])>=0.5):
+    	sum=0
+    	for d in range(dim):
+    		sum+=population[i][d]
+    	for d in range(dim):
+    		temp=population[i][d]/sum
+    		if(temp>=di):
     			x.append(1)
     		else:
     			x.append(0)
@@ -134,6 +138,7 @@ def population_for_f(population,population_count,dim):
 		for j in range(dim):
 			x.append(sigmoid(population[i][j]))
 		temp.append(x)
+	#print(temp)
 	return temp
 
 
@@ -142,21 +147,23 @@ def population_for_f(population,population_count,dim):
 Max_iter=50
 g=0
 population_count=10
-dim=29
+dim=59
 population=init_population(population_count,dim)
 #reading training/testing datasets
-column_names,x,y,train_count=read.read('../Data/UCI_DATA-master/BreastEW/BreastEW.csv')
+column_names,x,y,train_count=read.read('../Data/UCI_DATA-master/Sonar/Sonar.csv')
 x_train,x_test,y_train,y_test=train_test_split(x, y, test_size=0.20, random_state=1)
 print(len(x_train[0]))
 
 feature_map=make_feature(population,population_count,dim)
-print(len(x[0]))
+#print(feature_map)
+#print(len(x[0]))
 print("OLD_POPULATION:",np.asarray(population).shape)
 accuracy_list=returnAccuracyList(population_count,x_train,x_test,y_train,y_test,feature_map)
 #print(accuracy_list)
 accuracy_res,population_res=zip(*sorted(zip(accuracy_list,population),reverse=True))
-population=list(population_res[0:20])
-accuracy_list=list(accuracy_res[0:20])
+population=list(population_res[0:10])
+accuracy_list=list(accuracy_res[0:10])
+print(accuracy_list)
 #print(accuracy_res)
 population_new=population;
 N1=6
@@ -174,12 +181,20 @@ while(g<Max_iter):
 		population_new[i]=update_population(dim,population,theta,i)
 	feature_map=make_feature(population_for_f(population_new,N1,dim),N1,dim)
 	#print(feature_map)
+	accuracy_list_new=returnAccuracyList(N1,x_train,x_test,y_train,y_test,feature_map)
+	pop=list(population[0:N1])
+	accu=list(accuracy_res[0:N1])
+	population_new.extend(pop)
+	accuracy_list_new.extend(accu)
+	accuracy_res,population_res=zip(*sorted(zip(accuracy_list_new,population_new),reverse=True))
+	#print(feature_map)
 	for i in range(N1):
-		x_train_cur,x_test_cur=extractFeatures(x_train,x_test,feature_map[i])
-		accuracy=returnAccuracy(x_train_cur,x_test_cur,y_train,y_test)
-		if(accuracy>accuracy_list[i]):
-			population[i]=population_new[i]
-			accuracy_list[i]=accuracy
+		#x_train_cur,x_test_cur=extractFeatures(x_train,x_test,feature_map[i])
+		#accuracy=returnAccuracy(x_train_cur,x_test_cur,y_train,y_test)
+		#print(accuracy)
+		population[i]=population_res[i]
+		accuracy_list[i]=accuracy_res[i]
+	print(accuracy_list)
 	for i in range(N1,N1+N2):
 		distance=claculate_d(N1,N2,population,dim)
 		distance1=distance
@@ -192,6 +207,7 @@ while(g<Max_iter):
 		y=lemda*x1+(1-lemda)*x2
 		population_new[i-N1]=update_population1(N2,alfa,y)
 	feature_map=make_feature(population_for_f(population_new,N2,dim),N2,dim)
+	#print(feature_map)
 	for i in range(0,N2):
 		x_train_cur,x_test_cur=extractFeatures(x_train,x_test,feature_map[i])
 		accuracy=returnAccuracy(x_train_cur,x_test_cur,y_train,y_test)
@@ -203,7 +219,7 @@ while(g<Max_iter):
 	#==========================================================================================================
 	feature_map=make_feature(population_for_f(population_new,population_count,dim),population_count,dim)
 	#print(feature_map)
-	print("After Fission:",np.asarray(population).shape)
+	print("New population:",np.asarray(population).shape)
 	accuracy_list_new=returnAccuracyList(population_count,x_train,x_test,y_train,y_test,feature_map)
 	
 	population.extend(population_new)
