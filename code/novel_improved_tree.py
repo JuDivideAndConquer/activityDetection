@@ -5,7 +5,7 @@ import svm
 import read
 import numpy as np
 from sklearn.model_selection import train_test_split
-import importlib
+import matplotlib.pyplot as plt
 import csv
 from scipy.stats import norm
 from numpy import exp
@@ -73,6 +73,24 @@ def update_population1(i,alfa,y):
 		temp=population[i][d]+alfa*y
 		result.append(temp)
 	return result
+
+#--------------------------------num_of_feature fun-----------------------------------------------------
+def fitness(feature_map,dim):
+	result=list()
+	fitn=0
+	for j in range(dim):
+		if(feature_map[j]==1):
+			fitn+=1
+	return fitn
+
+#---------------------------num_feture for 2d--------------------------------------------------------
+
+def cal_fitx(feature_map,population_count,dim):
+	fitX=list()
+	for i in range(population_count):
+		temp=fitness(feature_map[i],dim)
+		fitX.append(temp)
+	return fitX
 
 
 #-------------------------------make features--------------------------------------------------
@@ -142,9 +160,21 @@ def population_for_f(population,population_count,dim):
 	return temp
 #------------------------------------save the result------------------------------------------------
 
+
+def saveInCSV_mini(feature_id,accuracy,population_count):
+	fname='../result1/Exactly/res.csv'
+	dim=29
+	with open(fname,mode='a+') as result_file:
+		result_writer=csv.writer(result_file)
+		l=list()
+		if(feature_id!=-1):
+			l.append(feature_id)
+		l.append(accuracy)
+		result_writer.writerow(l)
+
 #saving the result
 def saveInCSV(feature_id,population,accuracy_list):
-	fname='../result1/BreastCancer/'+str(feature_id)+'.csv'
+	fname='../result1/Exactly/'+str(feature_id)+'.csv'
 	for i in range(len(population)):
 		with open(fname,mode='a+') as result_file:
 			result_writer=csv.writer(result_file)
@@ -152,7 +182,7 @@ def saveInCSV(feature_id,population,accuracy_list):
 			l.append(population[i])
 			l.append(accuracy_list[i])
 			result_writer.writerow(l)
-		fname='../result1/BreastCancer/average.csv'
+		fname='../result1/Exactly/average.csv'
 		with open(fname,mode='a+') as result_file:
 			result_writer=csv.writer(result_file)
 			l=list()
@@ -160,16 +190,36 @@ def saveInCSV(feature_id,population,accuracy_list):
 			l.append(np.mean(accuracy_list))
 			result_writer.writerow(l)
 
+#--------------------------------------------------------graph--------------------------------------
+
+def weightedGA_plot_graph():
+	x=[]
+	y=[]
+	fname='../result1/Exactly/res.csv'
+	cnt=0
+	with open(fname, 'r') as csvfile:
+		plots= csv.reader(csvfile, delimiter=',')
+		for row in plots:
+			cnt+=1
+			x.append(float(row[1]))
+			y.append(float(row[0]))
+
+	plt.plot(x, y,'b', label='accuracy',marker='o')
+	plt.title('Number of features vs Accuracy')
+	plt.xlabel('Accuracy')
+	plt.ylabel('Number of features')
+	plt.show()
+
 
 #--------------------------------------------main fun-----------------------------
 
-Max_iter=50
+Max_iter=7
 g=0
-population_count=4
-dim=9
+population_count=10
+dim=12
 population=init_population(population_count,dim)
 #reading training/testing datasets
-column_names,x,y,train_count=read.read('../Data/UCI_DATA-master/BreastCancer/BreastCancer.csv')
+column_names,x,y,train_count=read.read('../Data/UCI_DATA-master/CSVformat/Exactly.csv')
 x_train,x_test,y_train,y_test=train_test_split(x, y, test_size=0.20, random_state=1)
 print(len(x_train[0]))
 
@@ -181,14 +231,14 @@ accuracy_list=returnAccuracyList(population_count,x_train,x_test,y_train,y_test,
 saveInCSV(g,population,accuracy_list)
 #print(accuracy_list)
 accuracy_res,population_res=zip(*sorted(zip(accuracy_list,population),reverse=True))
-population=list(population_res[0:4])
-accuracy_list=list(accuracy_res[0:4])
-print(accuracy_list)
+population=list(population_res[0:10])
+accuracy_list=list(accuracy_res[0:10])
+#print(accuracy_list)
 #print(accuracy_res)
 population_new=population;
-N1=2
-N2=1
-N3=1
+N1=6
+N2=2
+N3=2
 lemda=0.5
 alfa=0.99
 #saveInCSV(g,population,accuracy_list)
@@ -214,7 +264,7 @@ while(g<Max_iter):
 		#print(accuracy)
 		population[i]=population_res[i]
 		accuracy_list[i]=accuracy_res[i]
-	print(accuracy_list)
+	#print(accuracy_list)
 	for i in range(N1,N1+N2):
 		distance=claculate_d(N1,N2,population,dim)
 		distance1=distance
@@ -247,12 +297,15 @@ while(g<Max_iter):
 
 	accuracy_res,population_res=zip(*sorted(zip(accuracy_list,population),reverse=True))
 
-	population=list(population_res[0:4])
-	accuracy_list=list(accuracy_res[0:4])
+	population=list(population_res[0:10])
+	accuracy_list=list(accuracy_res[0:10])
 	print (np.asarray(population).shape,np.asarray(accuracy_list).shape)
+	feature_map=make_feature(population_for_f(population,population_count,dim),population_count,dim)
+	fitX=cal_fitx(feature_map,population_count,dim)
 	saveInCSV(g,population,accuracy_list)
+	saveInCSV_mini(np.mean(fitX),np.mean(accuracy_list),population_count)
 	#=========================================================================================================
-
+weightedGA_plot_graph()
 
 
 
