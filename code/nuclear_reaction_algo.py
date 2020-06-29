@@ -6,7 +6,7 @@ import svm
 import read
 import numpy as np
 from sklearn.model_selection import train_test_split
-import importlib
+import matplotlib.pyplot as plt
 import csv
 from scipy.stats import norm
 '''
@@ -288,16 +288,23 @@ def equ_no_22(i,alpha,bita,popuation):
     return result;
 
 
-#--------------------------------fitness fun-----------------------------------------------------
-def fitness(population,population_count,dim):
+#--------------------------------num_of_feature fun-----------------------------------------------------
+def fitness(feature_map,dim):
 	result=list()
+	fitn=0
+	for j in range(dim):
+		if(feature_map[j]==1):
+			fitn+=1
+	return fitn
+
+#---------------------------num_feture for 2d--------------------------------------------------------
+
+def cal_fitx(feature_map,population_count,dim):
+	fitX=list()
 	for i in range(population_count):
-		fitn=0
-		for j in range(dim):
-			if(population[i][j]>=0.5):
-				fitn+=1
-		result.append(fitn)
-	return result
+		temp=fitness(feature_map[i],dim)
+		fitX.append(temp)
+	return fitX
 
 #---------------------------------sort a population----------------------------------------------
 def make_sort(tempory,fitX,population_count):
@@ -344,12 +351,15 @@ def returnAccuracy(x_train_cur,x_test_cur,y_train,y_test):
 	accuracy=svm.SVM(x_train_cur,y_train,x_test_cur,y_test)
 	return accuracy
 
-def returnAccuracyList(count,x_train,x_test,y_train,y_test,feature_map):
+def returnAccuracyList(count,x_train,x_test,y_train,y_test,feature_map,fitX):
 	accuracy_list=list()
 	for i in range(count):
 		#print("FEATURE MAP :",i)
-		x_train_cur,x_test_cur=extractFeatures(x_train,x_test,feature_map[i])
-		accuracy=returnAccuracy(x_train_cur,x_test_cur,y_train,y_test)
+		if(fitX[i]!=0):
+			x_train_cur,x_test_cur=extractFeatures(x_train,x_test,feature_map[i])
+			accuracy=returnAccuracy(x_train_cur,x_test_cur,y_train,y_test)
+		else:
+			accuracy=0
 		accuracy_list.append(accuracy)
 	return accuracy_list
 
@@ -371,6 +381,17 @@ def make_feature(population,population_count,dim):
 
 #------------------------------------save the result------------------------------------------------
 
+def saveInCSV_mini(feature_id,accuracy,population_count):
+	fname='../Result/Sonar1/res.csv'
+	dim=29
+	with open(fname,mode='a+') as result_file:
+		result_writer=csv.writer(result_file)
+		l=list()
+		if(feature_id!=-1):
+			l.append(feature_id)
+		l.append(accuracy)
+		result_writer.writerow(l)
+
 #saving the result
 def saveInCSV(feature_id,population,accuracy_list):
 	fname='../Result/Sonar1/'+str(feature_id)+'.csv'
@@ -388,6 +409,7 @@ def saveInCSV(feature_id,population,accuracy_list):
 			l.append(feature_id)
 			l.append(np.mean(accuracy_list))
 			result_writer.writerow(l)
+
 #------------------------result between 0-1-------------------------------------------------------
 def population_for_f(population,population_count,dim):
 	temp=list()
@@ -399,6 +421,28 @@ def population_for_f(population,population_count,dim):
 	return temp
 
 
+#--------------------------------------------------------graph--------------------------------------
+
+def weightedGA_plot_graph():
+	x=[]
+	y=[]
+	fname='../Result/Sonar1/res.csv'
+	cnt=0
+	with open(fname, 'r') as csvfile:
+		plots= csv.reader(csvfile, delimiter=',')
+		for row in plots:
+			cnt+=1
+			x.append(float(row[1]))
+			y.append(float(row[0]))
+
+	plt.plot(x, y,'b', label='accuracy',marker='o')
+	plt.title('Number of features vs Accuracy')
+	plt.xlabel('Accuracy')
+	plt.ylabel('Number of features')
+	plt.show()
+
+
+
 #--------------------------------main fun---------------------------------------------------------
 
 #initialize the value of lb,ub,population_count,Max_iter,g
@@ -407,12 +451,11 @@ g=1;
 population_count=10;
 lbd=0;
 ubd=1;
-dim=29;
+dim=59;
 freq=2;
 
 population=list()
 Pa=list()
-fitX=list()
 population=init_population(population_count,dim)
 #print(population)
 tempory=population;
@@ -426,17 +469,18 @@ accuracy_list=list()
 #reading training/testing datasets
 #column_names,x_train,y_train,train_count=read.read('../Data/1/train.csv')
 #column_names,x_test,y_test,test_count=read.read('../Data/1/test.csv')
-column_names,x,y,train_count=read.read('../Data/UCI_DATA-master/BreastEW/BreastEW.csv')
+column_names,x,y,train_count=read.read('../Data/UCI_DATA-master/Sonar/Sonar.csv')
 x_train,x_test,y_train,y_test=train_test_split(x, y, test_size=0.20, random_state=1)
 print(len(x_train[0]))
 feature_map=make_feature(population,population_count,dim)
+fitx=cal_fitx(feature_map,population_count,dim)
 #print(feature_map)
 
 #----------------------------------------------------------------
 #evaluate the fitness funtion
 #------------------------------------------------------------------
 print("OLD_POPULATION:",np.asarray(population).shape)
-accuracy_list=returnAccuracyList(population_count,x_train,x_test,y_train,y_test,feature_map)
+accuracy_list=returnAccuracyList(population_count,x_train,x_test,y_train,y_test,feature_map,fitx)
 saveInCSV(g,population,accuracy_list)
 #print(population[0][0])
 #print(sigmoid(population[0][0]))
@@ -464,9 +508,10 @@ while(g<Max_iter):
 	#calculate the fit X
 	#========================================================================================================
 	feature_map=make_feature(population_for_f(population_new,population_count,dim),population_count,dim)
+	fitx=cal_fitx(feature_map,population_count,dim)
 	#print(feature_map)
 	print("After Fission:",np.asarray(population).shape)
-	accuracy_list_new=returnAccuracyList(population_count,x_train,x_test,y_train,y_test,feature_map)
+	accuracy_list_new=returnAccuracyList(population_count,x_train,x_test,y_train,y_test,feature_map,fitx)
 	
 	population.extend(population_new)
 	accuracy_list.extend(accuracy_list_new)
@@ -504,8 +549,9 @@ while(g<Max_iter):
 	#calculate the fit X
 	#========================================================================================================
 	feature_map=make_feature(population_for_f(population_new,population_count,dim),population_count,dim)
+	fitx=cal_fitx(feature_map,population_count,dim)
 	print("After Ionization:",np.asarray(population).shape)
-	accuracy_list_new=returnAccuracyList(population_count,x_train,x_test,y_train,y_test,feature_map)
+	accuracy_list_new=returnAccuracyList(population_count,x_train,x_test,y_train,y_test,feature_map,fitx)
 	
 	population.extend(population_new)
 	accuracy_list.extend(accuracy_list_new)
@@ -534,8 +580,9 @@ while(g<Max_iter):
 
 	#===========================================================================================================
 	feature_map=make_feature(population_for_f(population_new,population_count,dim),population_count,dim)
+	fitx=cal_fitx(feature_map,population_count,dim)
 	print("NEW_POPULATION:",np.asarray(population).shape)
-	accuracy_list_new=returnAccuracyList(population_count,x_train,x_test,y_train,y_test,feature_map)
+	accuracy_list_new=returnAccuracyList(population_count,x_train,x_test,y_train,y_test,feature_map,fitx)
 	
 	population.extend(population_new)
 	accuracy_list.extend(accuracy_list_new)
@@ -545,15 +592,12 @@ while(g<Max_iter):
 	population=list(population_res[0:10])
 	accuracy_list=list(accuracy_res[0:10])
 	print (np.asarray(population).shape,np.asarray(accuracy_list).shape)
+	feature_map=make_feature(population_for_f(population,population_count,dim),population_count,dim)
+	fitx=cal_fitx(feature_map,population_count,dim)
 	saveInCSV(g,population,accuracy_list)
-
+	saveInCSV_mini(np.mean(fitx),np.mean(accuracy_list),population_count)
+weightedGA_plot_graph()
 	#============================================================================================================
-
-
-
-
-
-
 
 
 
