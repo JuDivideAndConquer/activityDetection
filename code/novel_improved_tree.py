@@ -144,7 +144,7 @@ def population_for_f(population,population_count,dim):
 
 #saving the result
 def saveInCSV(feature_id,population,accuracy_list):
-	fname='../result1/Lymphography/'+str(feature_id)+'.csv'
+	fname='../result1/BreastCancer/'+str(feature_id)+'.csv'
 	for i in range(len(population)):
 		with open(fname,mode='a+') as result_file:
 			result_writer=csv.writer(result_file)
@@ -152,7 +152,7 @@ def saveInCSV(feature_id,population,accuracy_list):
 			l.append(population[i])
 			l.append(accuracy_list[i])
 			result_writer.writerow(l)
-		fname='../result1/Lymphography/average.csv'
+		fname='../result1/BreastCancer/average.csv'
 		with open(fname,mode='a+') as result_file:
 			result_writer=csv.writer(result_file)
 			l=list()
@@ -165,11 +165,11 @@ def saveInCSV(feature_id,population,accuracy_list):
 
 Max_iter=50
 g=0
-population_count=10
-dim=17
+population_count=4
+dim=9
 population=init_population(population_count,dim)
 #reading training/testing datasets
-column_names,x,y,train_count=read.read('../Data/UCI_DATA-master/Lymphography/Lymphography.csv')
+column_names,x,y,train_count=read.read('../Data/UCI_DATA-master/BreastCancer/BreastCancer.csv')
 x_train,x_test,y_train,y_test=train_test_split(x, y, test_size=0.20, random_state=1)
 print(len(x_train[0]))
 
@@ -181,14 +181,14 @@ accuracy_list=returnAccuracyList(population_count,x_train,x_test,y_train,y_test,
 saveInCSV(g,population,accuracy_list)
 #print(accuracy_list)
 accuracy_res,population_res=zip(*sorted(zip(accuracy_list,population),reverse=True))
-population=list(population_res[0:10])
-accuracy_list=list(accuracy_res[0:10])
+population=list(population_res[0:4])
+accuracy_list=list(accuracy_res[0:4])
 print(accuracy_list)
 #print(accuracy_res)
 population_new=population;
-N1=6
-N2=2
-N3=2
+N1=2
+N2=1
+N3=1
 lemda=0.5
 alfa=0.99
 #saveInCSV(g,population,accuracy_list)
@@ -247,8 +247,8 @@ while(g<Max_iter):
 
 	accuracy_res,population_res=zip(*sorted(zip(accuracy_list,population),reverse=True))
 
-	population=list(population_res[0:10])
-	accuracy_list=list(accuracy_res[0:10])
+	population=list(population_res[0:4])
+	accuracy_list=list(accuracy_res[0:4])
 	print (np.asarray(population).shape,np.asarray(accuracy_list).shape)
 	saveInCSV(g,population,accuracy_list)
 	#=========================================================================================================
