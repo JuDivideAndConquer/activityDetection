@@ -10,7 +10,7 @@ def SVM(x_train,y_train,x_test,y_test):
     svm.fit(x_train, y_train) 
     svm_predictions = svm.predict(x_test) 
     accuracy = accuracy_score(y_test,svm_predictions)
-    print ("Accuracy: ",accuracy)
+    #print ("Accuracy: ",accuracy)
     #print(clf.get_params)
     return accuracy
   

@@ -14,6 +14,7 @@ from scipy.stats import norm
 '''
 P_fi = 0.5 #probabiltiy of fission reaction
 P_beta = 0.75 #probability of beta decay
+folder="Zoo"
 
 
 #--------------------------------------diracdelta fun------------------------------------------
@@ -382,7 +383,7 @@ def make_feature(population,population_count,dim):
 #------------------------------------save the result------------------------------------------------
 
 def saveInCSV_mini(feature_id,accuracy,population_count):
-	fname='../Result/Sonar1/res.csv'
+	fname='../NRO_r/'+folder+'/res.csv'
 	dim=29
 	with open(fname,mode='a+') as result_file:
 		result_writer=csv.writer(result_file)
@@ -394,7 +395,7 @@ def saveInCSV_mini(feature_id,accuracy,population_count):
 
 #saving the result
 def saveInCSV(feature_id,population,accuracy_list):
-	fname='../Result/Sonar1/'+str(feature_id)+'.csv'
+	fname='../NRO_r/'+folder+'/'+str(feature_id)+'.csv'
 	for i in range(len(population)):
 		with open(fname,mode='a+') as result_file:
 			result_writer=csv.writer(result_file)
@@ -402,7 +403,7 @@ def saveInCSV(feature_id,population,accuracy_list):
 			l.append(population[i])
 			l.append(accuracy_list[i])
 			result_writer.writerow(l)
-		fname='../Result/Sonar1/average.csv'
+		fname='../NRO_r/'+folder+'/average.csv'
 		with open(fname,mode='a+') as result_file:
 			result_writer=csv.writer(result_file)
 			l=list()
@@ -426,7 +427,7 @@ def population_for_f(population,population_count,dim):
 def weightedGA_plot_graph():
 	x=[]
 	y=[]
-	fname='../Result/Sonar1/res.csv'
+	fname='../NRO_r/'+folder+'/res.csv'
 	cnt=0
 	with open(fname, 'r') as csvfile:
 		plots= csv.reader(csvfile, delimiter=',')
@@ -451,7 +452,7 @@ g=1;
 population_count=10;
 lbd=0;
 ubd=1;
-dim=59;
+dim=15
 freq=2;
 
 population=list()
@@ -469,7 +470,7 @@ accuracy_list=list()
 #reading training/testing datasets
 #column_names,x_train,y_train,train_count=read.read('../Data/1/train.csv')
 #column_names,x_test,y_test,test_count=read.read('../Data/1/test.csv')
-column_names,x,y,train_count=read.read('../Data/UCI_DATA-master/Sonar/Sonar.csv')
+column_names,x,y,train_count=read.read('../Data/UCI_DATA-master/'+folder+'/'+folder+'.csv')
 x_train,x_test,y_train,y_test=train_test_split(x, y, test_size=0.20, random_state=1)
 print(len(x_train[0]))
 feature_map=make_feature(population,population_count,dim)
@@ -479,7 +480,7 @@ fitx=cal_fitx(feature_map,population_count,dim)
 #----------------------------------------------------------------
 #evaluate the fitness funtion
 #------------------------------------------------------------------
-print("OLD_POPULATION:",np.asarray(population).shape)
+#print("OLD_POPULATION:",np.asarray(population).shape)
 accuracy_list=returnAccuracyList(population_count,x_train,x_test,y_train,y_test,feature_map,fitx)
 saveInCSV(g,population,accuracy_list)
 #print(population[0][0])
@@ -510,7 +511,7 @@ while(g<Max_iter):
 	feature_map=make_feature(population_for_f(population_new,population_count,dim),population_count,dim)
 	fitx=cal_fitx(feature_map,population_count,dim)
 	#print(feature_map)
-	print("After Fission:",np.asarray(population).shape)
+	#print("After Fission:",np.asarray(population).shape)
 	accuracy_list_new=returnAccuracyList(population_count,x_train,x_test,y_train,y_test,feature_map,fitx)
 	
 	population.extend(population_new)
@@ -520,7 +521,7 @@ while(g<Max_iter):
 
 	population=list(population_res[0:10])
 	accuracy_list=list(accuracy_res[0:10])
-	print (np.asarray(population).shape,np.asarray(accuracy_list).shape)
+	#print (np.asarray(population).shape,np.asarray(accuracy_list).shape)
 	saveInCSV(g,population,accuracy_list)
 
 	#=======================================================================================================
@@ -550,7 +551,7 @@ while(g<Max_iter):
 	#========================================================================================================
 	feature_map=make_feature(population_for_f(population_new,population_count,dim),population_count,dim)
 	fitx=cal_fitx(feature_map,population_count,dim)
-	print("After Ionization:",np.asarray(population).shape)
+	#print("After Ionization:",np.asarray(population).shape)
 	accuracy_list_new=returnAccuracyList(population_count,x_train,x_test,y_train,y_test,feature_map,fitx)
 	
 	population.extend(population_new)
@@ -560,7 +561,7 @@ while(g<Max_iter):
 
 	population=list(population_res[0:10])
 	accuracy_list=list(accuracy_res[0:10])
-	print (np.asarray(population).shape,np.asarray(accuracy_list).shape)
+	#print (np.asarray(population).shape,np.asarray(accuracy_list).shape)
 	saveInCSV(g,population,accuracy_list)
 
 	#=======================================================================================================
@@ -581,17 +582,18 @@ while(g<Max_iter):
 	#===========================================================================================================
 	feature_map=make_feature(population_for_f(population_new,population_count,dim),population_count,dim)
 	fitx=cal_fitx(feature_map,population_count,dim)
-	print("NEW_POPULATION:",np.asarray(population).shape)
+	#print("NEW_POPULATION:",np.asarray(population).shape)
 	accuracy_list_new=returnAccuracyList(population_count,x_train,x_test,y_train,y_test,feature_map,fitx)
 	
 	population.extend(population_new)
 	accuracy_list.extend(accuracy_list_new)
+	fitx,accuracy_res,population_res=zip(*sorted(zip(fitx,accuracy_list,population)))
 
 	accuracy_res,population_res=zip(*sorted(zip(accuracy_list,population),reverse=True))
 
 	population=list(population_res[0:10])
 	accuracy_list=list(accuracy_res[0:10])
-	print (np.asarray(population).shape,np.asarray(accuracy_list).shape)
+	#print (np.asarray(population).shape,np.asarray(accuracy_list).shape)
 	feature_map=make_feature(population_for_f(population,population_count,dim),population_count,dim)
 	fitx=cal_fitx(feature_map,population_count,dim)
 	saveInCSV(g,population,accuracy_list)

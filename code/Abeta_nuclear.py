@@ -6,21 +6,17 @@ import svm
 import read
 import numpy as np
 from sklearn.model_selection import train_test_split
-import importlib
+import matplotlib.pyplot as plt
 import csv
 from scipy.stats import norm
-import sailFish
+#import sailFish
 '''
     A variable rand_p determines reaction
 '''
 P_fi = 0.5 #probabiltiy of fission reaction
 P_beta = 0.75 #probability of beta decay
-pp=0.1 #parameter
-ID_POS = 0
-ID_FIT = 1
-omega = 0.9
-dim=59;
-
+pp = 0.1 # parameter
+A, epxilon = 4, 0.001
 
 
 #--------------------------------------diracdelta fun------------------------------------------
@@ -294,148 +290,24 @@ def equ_no_22(i,alpha,bita,popuation):
         result.append(temp);
     return result;
 
-#------------------------------------------------
-#sailfishcode
-#------------------------------------------------
 
-#--------------------------------update selfish-------------------------------------------------
-def sailFish(trainX, testX, trainy, testy ,dimension,pop_size):
-		#url = "https://raw.githubusercontent.com/Rangerix/UCI_DATA/master/CSVformat/BreastCancer.csv"
-		#df = pd.read_csv(dataset)
-		#a, b = np.shape(df)
-		#data = df.values[:,0:b-1]
-		#label = df.values[:,b-1]
-		#dimension = data.shape[1]
+#--------------------------------num_of_feature fun-----------------------------------------------------
+def fitness(feature_map,dim):
+	result=list()
+	fitn=0
+	for j in range(dim):
+		if(feature_map[j]==1):
+			fitn+=1
+	return fitn
 
-		cross = 5
-		test_size = (1/cross)
-		#trainX, testX, trainy, testy = train_test_split(data, label,stratify=label ,test_size=test_size,random_state=(7+17*int(time.time()%1000)))
-		clf=KNeighborsClassifier(n_neighbors=5)
-		clf.fit(trainX,trainy)
-		val=clf.score(testX,testy)
-		whole_accuracy = val
-		print("Total Acc: ",val)
+#---------------------------num_feture for 2d--------------------------------------------------------
 
-		s_size = int(pop_size / pp)
-		sf_pop = initialise(pop_size, dimension, trainX, testX, trainy, testy)
-		s_pop = initialise(s_size, dimension, trainX, testX, trainy, testy)
-
-		sf_gbest = _get_global_best__(sf_pop, ID_FIT, ID_MIN_PROBLEM)
-		s_gbest = _get_global_best__(s_pop, ID_FIT, ID_MIN_PROBLEM)
-
-		temp = np.array([])
-
-		for iterno in range(0, epoch):
-			print(iterno)
-			## Calculate lamda_i using Eq.(7)
-			## Update the position of sailfish using Eq.(6)
-			for i in range(0, pop_size):
-				PD = 1 - len(sf_pop) / ( len(sf_pop) + len(s_pop) )
-				lamda_i = 2 * np.random.uniform() * PD - PD
-				sf_pop_arr = s_gbest[ID_POS] - lamda_i * ( np.random.uniform() *( sf_gbest[ID_POS] + s_gbest[ID_POS] ) / 2 - sf_pop[i][ID_POS] )
-				sf_pop_fit = sf_pop[i][ID_FIT]
-				new_tuple = (sf_pop_arr, sf_pop_fit)
-
-				sf_pop[i] = new_tuple
-
-			## Calculate AttackPower using Eq.(10)
-			AP = A * ( 1 - 2 * (iterno) * epxilon )
-			if AP < 0.5:
-				alpha = int(len(s_pop) * AP )
-				beta = int(dimension * AP)
-				### Random choice number of sardines which will be updated their position
-				list1 = np.random.choice(range(0, len(s_pop)), alpha)
-				for i in range(0, len(s_pop)):
-					if i in list1:
-						#### Random choice number of dimensions in sardines updated
-						list2 = np.random.choice(range(0, dimension), beta)
-						s_pop_arr = s_pop[i][ID_POS]
-						for j in range(0, dimension):
-							if j in list2:
-								##### Update the position of selected sardines and selected their dimensions
-								s_pop_arr[j] = np.random.uniform()*( sf_gbest[ID_POS][j] - s_pop[i][ID_POS][j] + AP )
-						s_pop_fit = s_pop[i][ID_FIT]
-						new_tuple = ( s_pop_arr, s_pop_fit)
-						s_pop[i] = new_tuple
-			else:
-				### Update the position of all sardine using Eq.(9)
-				for i in range(0, len(s_pop)):
-					s_pop_arr = np.random.uniform()*( sf_gbest[ID_POS] - s_pop[i][ID_POS] + AP )
-					s_pop_fit = s_pop[i][ID_FIT]
-					new_tuple = (s_pop_arr, s_pop_fit)
-					s_pop[i] = new_tuple
-
-			# population in binary
-			# y, z = np.array([]), np.array([])
-			# ychosen = 0
-			# zchosen = 0
-			# # print(np.shape(s_pop))
-			for i in range(np.shape(s_pop)[0]):
-				agent = s_pop[i][ID_POS]
-				tempFit = s_pop[i][ID_FIT]
-				random.seed(time.time())
-				#print("agent shape :",np.shape(agent))
-				y, z = np.array([]), np.array([])
-				for j in range(np.shape(agent)[0]):
-					random.seed(time.time()*200+999)
-					r1 = random.random()
-					random.seed(time.time()*200+999)
-					if sigmoid1(agent[j]) < r1:
-						y = np.append(y,0)
-					else:
-						y = np.append(y,1)
-
-				yfit = fitness(y, trainX, testX, trainy, testy)
-				agent = deepcopy(y)
-				tempFit = yfit
-
-				new_tuple = (agent,tempFit)
-				s_pop[i] = new_tuple
-			## Recalculate the fitness of all sardine
-			# print("y chosen:",ychosen,"z chosen:",zchosen,"total: ",ychosen+zchosen)
-			for i in range(0, len(s_pop)):
-				s_pop_arr = s_pop[i][ID_POS]
-				s_pop_fit = fitness(s_pop[i][ID_POS],trainX, testX, trainy, testy)
-				new_tuple = (s_pop_arr, s_pop_fit)
-				s_pop[i] = new_tuple
-
-			# local search algo
-			for i in range(np.shape(s_pop)[0]):
-				new_tuple = adaptiveBeta(s_pop[i],trainX,testX,trainy,testy)
-				s_pop[i] = new_tuple
-
-			## Sort the population of sailfish and sardine (for reducing computational cost)
-			sf_pop = sorted(sf_pop, key=lambda temp: temp[ID_FIT])
-			s_pop = sorted(s_pop, key=lambda temp: temp[ID_FIT])
-			for i in range(0, pop_size):
-				s_size_2 = len(s_pop)
-				if s_size_2 == 0:
-					s_pop = initialise(s_pop, dimension, trainX, testX, trainy, testy)
-					s_pop = sorted(s_pop, key=lambda temp: temp[ID_FIT])
-				for j in range(0, s_size):
-					### If there is a better solution in sardine population.
-					if sf_pop[i][ID_FIT] > s_pop[j][ID_FIT]:
-						sf_pop[i] = deepcopy(s_pop[j])
-						del s_pop[j]
-					break   #### This simple keyword helped reducing ton of comparing operation.
-							#### Especially when sardine pop size >> sailfish pop size
-			
-			# OBL
-			# sf_pop = OBL(sf_pop, trainX, testX, trainy, testy)
-			sf_current_best = _get_global_best__(sf_pop, ID_FIT, ID_MIN_PROBLEM)
-			s_current_best = _get_global_best__(s_pop, ID_FIT, ID_MIN_PROBLEM)
-			if sf_current_best[ID_FIT] < sf_gbest[ID_FIT]:
-				sf_gbest = np.array(deepcopy(sf_current_best))
-			if s_current_best[ID_FIT] < s_gbest[ID_FIT]:
-				s_gbest = np.array(deepcopy(s_current_best))
-
-
-		testAcc = test_accuracy(sf_gbest[ID_POS], trainX, testX, trainy, testy)
-		featCnt = onecnt(sf_gbest[ID_POS])
-		print("Test Accuracy: ", testAcc)
-		print("#Features: ", featCnt)
-
-		return sf_gbest[ID_POS], testAcc, featCnt
+def cal_fitx(feature_map,population_count,dim):
+	fitX=list()
+	for i in range(population_count):
+		temp=fitness(feature_map[i],dim)
+		fitX.append(temp)
+	return fitX
 
 #---------------------------------sort a population----------------------------------------------
 def make_sort(tempory,fitX,population_count):
@@ -482,12 +354,15 @@ def returnAccuracy(x_train_cur,x_test_cur,y_train,y_test):
 	accuracy=svm.SVM(x_train_cur,y_train,x_test_cur,y_test)
 	return accuracy
 
-def returnAccuracyList(count,x_train,x_test,y_train,y_test,feature_map):
+def returnAccuracyList(count,x_train,x_test,y_train,y_test,feature_map,fitX):
 	accuracy_list=list()
 	for i in range(count):
 		#print("FEATURE MAP :",i)
-		x_train_cur,x_test_cur=extractFeatures(x_train,x_test,feature_map[i])
-		sf,fetures,accuracy=sailFish(x_train_cur,x_test_cur,y_train,y_test,dim,population_count)
+		if(fitX[i]!=0):
+			x_train_cur,x_test_cur=extractFeatures(x_train,x_test,feature_map[i])
+			accuracy=returnAccuracy(x_train_cur,x_test_cur,y_train,y_test)
+		else:
+			accuracy=0
 		accuracy_list.append(accuracy)
 	return accuracy_list
 
@@ -509,9 +384,20 @@ def make_feature(population,population_count,dim):
 
 #------------------------------------save the result------------------------------------------------
 
+def saveInCSV_mini(feature_id,accuracy,population_count):
+	fname='../Result/Sonar/res.csv'
+	dim=29
+	with open(fname,mode='a+') as result_file:
+		result_writer=csv.writer(result_file)
+		l=list()
+		if(feature_id!=-1):
+			l.append(feature_id)
+		l.append(accuracy)
+		result_writer.writerow(l)
+
 #saving the result
 def saveInCSV(feature_id,population,accuracy_list):
-	fname='../Result/Sonar1/'+str(feature_id)+'.csv'
+	fname='../Result/Sonar/'+str(feature_id)+'.csv'
 	for i in range(len(population)):
 		with open(fname,mode='a+') as result_file:
 			result_writer=csv.writer(result_file)
@@ -519,13 +405,14 @@ def saveInCSV(feature_id,population,accuracy_list):
 			l.append(population[i])
 			l.append(accuracy_list[i])
 			result_writer.writerow(l)
-		fname='../Result/Sonar1/average.csv'
+		fname='../Result/Sonar/average.csv'
 		with open(fname,mode='a+') as result_file:
 			result_writer=csv.writer(result_file)
 			l=list()
 			l.append(feature_id)
 			l.append(np.mean(accuracy_list))
 			result_writer.writerow(l)
+
 #------------------------result between 0-1-------------------------------------------------------
 def population_for_f(population,population_count,dim):
 	temp=list()
@@ -537,6 +424,28 @@ def population_for_f(population,population_count,dim):
 	return temp
 
 
+#--------------------------------------------------------graph--------------------------------------
+
+def weightedGA_plot_graph():
+	x=[]
+	y=[]
+	fname='../Result/Sonar/res.csv'
+	cnt=0
+	with open(fname, 'r') as csvfile:
+		plots= csv.reader(csvfile, delimiter=',')
+		for row in plots:
+			cnt+=1
+			x.append(float(row[1]))
+			y.append(float(row[0]))
+
+	plt.plot(x, y,'b', label='accuracy',marker='o')
+	plt.title('Number of features vs Accuracy')
+	plt.xlabel('Accuracy')
+	plt.ylabel('Number of features')
+	plt.show()
+
+
+
 #--------------------------------main fun---------------------------------------------------------
 
 #initialize the value of lb,ub,population_count,Max_iter,g
@@ -545,12 +454,14 @@ g=1;
 population_count=10;
 lbd=0;
 ubd=1;
+dim=59;
 freq=2;
 
 population=list()
 Pa=list()
-fitX=list()
+s_size = int(population_count / pp)
 population=init_population(population_count,dim)
+s_pop=init_population(s_size,dim)
 #print(population)
 tempory=population;
 column_names=list()
@@ -563,17 +474,22 @@ accuracy_list=list()
 #reading training/testing datasets
 #column_names,x_train,y_train,train_count=read.read('../Data/1/train.csv')
 #column_names,x_test,y_test,test_count=read.read('../Data/1/test.csv')
-column_names,x,y,train_count=read.read('../Data/UCI_DATA-master/BreastEW/BreastEW.csv')
+column_names,x,y,train_count=read.read('../Data/UCI_DATA-master/Sonar/Sonar.csv')
 x_train,x_test,y_train,y_test=train_test_split(x, y, test_size=0.20, random_state=1)
 print(len(x_train[0]))
 feature_map=make_feature(population,population_count,dim)
+fitx=cal_fitx(feature_map,population_count,dim)
+feature_s=make_feature(s_pop,s_size,dim)
+num_fe=cal_fitx(feature_s,s_size,dim)
 #print(feature_map)
 
 #----------------------------------------------------------------
 #evaluate the fitness funtion
 #------------------------------------------------------------------
-print("OLD_POPULATION:",np.asarray(population).shape)
-accuracy_list=returnAccuracyList(population_count,x_train,x_test,y_train,y_test,feature_map)
+#print("OLD_POPULATION:",np.asarray(population).shape)
+accuracy_list=returnAccuracyList(population_count,x_train,x_test,y_train,y_test,feature_map,fitx)
+s_accurcy=returnAccuracyList(s_size,x_train,x_test,y_train,y_test,feature_s,num_fe)
+s_accurcy,s_pop=zip(*sorted(zip(s_accurcy,s_pop),reverse=True))
 saveInCSV(g,population,accuracy_list)
 #print(population[0][0])
 #print(sigmoid(population[0][0]))
@@ -601,9 +517,10 @@ while(g<Max_iter):
 	#calculate the fit X
 	#========================================================================================================
 	feature_map=make_feature(population_for_f(population_new,population_count,dim),population_count,dim)
+	fitx=cal_fitx(feature_map,population_count,dim)
 	#print(feature_map)
-	print("After Fission:",np.asarray(population).shape)
-	accuracy_list_new=returnAccuracyList(population_count,x_train,x_test,y_train,y_test,feature_map)
+	#print("After Fission:",np.asarray(population).shape)
+	accuracy_list_new=returnAccuracyList(population_count,x_train,x_test,y_train,y_test,feature_map,fitx)
 	
 	population.extend(population_new)
 	accuracy_list.extend(accuracy_list_new)
@@ -612,7 +529,7 @@ while(g<Max_iter):
 
 	population=list(population_res[0:10])
 	accuracy_list=list(accuracy_res[0:10])
-	print (np.asarray(population).shape,np.asarray(accuracy_list).shape)
+	#print (np.asarray(population).shape,np.asarray(accuracy_list).shape)
 	saveInCSV(g,population,accuracy_list)
 
 	#=======================================================================================================
@@ -641,17 +558,19 @@ while(g<Max_iter):
 	#calculate the fit X
 	#========================================================================================================
 	feature_map=make_feature(population_for_f(population_new,population_count,dim),population_count,dim)
-	print("After Ionization:",np.asarray(population).shape)
-	accuracy_list_new=returnAccuracyList(population_count,x_train,x_test,y_train,y_test,feature_map)
+	fitx=cal_fitx(feature_map,population_count,dim)
+	#print("After Ionization:",np.asarray(population).shape)
+	accuracy_list_new=returnAccuracyList(population_count,x_train,x_test,y_train,y_test,feature_map,fitx)
 	
 	population.extend(population_new)
 	accuracy_list.extend(accuracy_list_new)
-
 	accuracy_res,population_res=zip(*sorted(zip(accuracy_list,population),reverse=True))
-
 	population=list(population_res[0:10])
 	accuracy_list=list(accuracy_res[0:10])
-	print (np.asarray(population).shape,np.asarray(accuracy_list).shape)
+	feature_map=make_feature(population_for_f(population,population_count,dim),population_count,dim)
+	fitx=cal_fitx(feature_map,population_count,dim)
+	number_fe=fitx
+	#print (np.asarray(population).shape,np.asarray(accuracy_list).shape)
 	saveInCSV(g,population,accuracy_list)
 
 	#=======================================================================================================
@@ -671,20 +590,78 @@ while(g<Max_iter):
 
 	#===========================================================================================================
 	feature_map=make_feature(population_for_f(population_new,population_count,dim),population_count,dim)
-	print("NEW_POPULATION:",np.asarray(population).shape)
-	accuracy_list_new=returnAccuracyList(population_count,x_train,x_test,y_train,y_test,feature_map)
+	fitx=cal_fitx(feature_map,population_count,dim)
+	#print("NEW_POPULATION:",np.asarray(population).shape)
+	accuracy_list_new=returnAccuracyList(population_count,x_train,x_test,y_train,y_test,feature_map,fitx)
 	
 	population.extend(population_new)
 	accuracy_list.extend(accuracy_list_new)
-
+	number_fe.extend(fitx)
+	number_fe,accuracy_res,population_res=zip(*sorted(zip(number_fe,accuracy_list,population)))
 	accuracy_res,population_res=zip(*sorted(zip(accuracy_list,population),reverse=True))
 
 	population=list(population_res[0:10])
 	accuracy_list=list(accuracy_res[0:10])
-	print (np.asarray(population).shape,np.asarray(accuracy_list).shape)
+	#print (np.asarray(population).shape,np.asarray(accuracy_list).shape)
+	feature_map=make_feature(population_for_f(population,population_count,dim),population_count,dim)
+	fitx=cal_fitx(feature_map,population_count,dim)
 	saveInCSV(g,population,accuracy_list)
-
 	#============================================================================================================
-	s_size = int(population_count/ pp)
+
+	#sailfish code
+	'''sf_pop=population
+	sf_gbest=population[0]
+	s_gbest=s_pop[0]
+	for i in range(0,population_count):
+		PD=1-len(sf_pop)/(len(sf_pop)+len(s_pop))
+		lamda_i=2*np.random.uniform(0,1)*PD-PD
+		sf_pop_arr = sf_pop[i]
+		for j in range(dim):
+			sf_pop_arr[j]=s_gbest[j]-lamda_i*(np.random.uniform()*(sf_gbest[j]+s_gbest[j])/2-sf_pop[i][j])
+		sf_pop[i]=sf_pop_arr
+	## Calculate AttackPower using Eq.(10)
+	AP=A*(1-2*g*epxilon)
+	if AP < 0.5:
+		alpha=int(len(s_pop)*AP)
+		beta=int(dim*AP)
+		### Random choice number of sardines which will be updated their position
+		list1=np.random.choice(range(0, len(s_pop)), alpha)
+		for i in range(0, len(s_pop)):
+			if i in list1:
+				#### Random choice number of dimensions in sardines updated
+				list2 = np.random.choice(range(0, dimension), beta)
+				s_pop_arr = s_pop[i]
+				for j in range(0, dim):
+					if j in list2:
+						##### Update the position of selected sardines and selected their dimensions
+						s_pop_arr[j]=np.random.uniform()*( sf_gbest[j] - s_pop[i][j] + AP )
+				s_pop[i]=s_pop_arr
 
 
+	else:
+		### Update the position of all sardine using Eq.(9)
+		for i in range(0, dim):
+			s_pop_arr=[0]*dim
+			for j in range(0,dim):
+				s_pop[i][j]=np.random.uniform()*(sf_gbest[j]-s_pop[i][j]+AP)
+			#s_pop[i]=s_pop_arr
+	#============================================================================================================
+
+	feature_map=make_feature(population_for_f(sf_pop,population_count,dim),population_count,dim)
+	fitx=cal_fitx(feature_map,population_count,dim)
+	sf_accu=returnAccuracyList(population_count,x_train,x_test,y_train,y_test,feature_map,fitx)
+	population.extend(sf_pop)
+	accuracy_list.extend(sf_accu)
+	accuracy_res,population_res=zip(*sorted(zip(accuracy_list,population),reverse=True))
+	population=list(population_res[0:10])
+	accuracy_list=list(accuracy_res[0:10])
+	feature_s=make_feature(s_pop,s_size,dim)
+	num_fe=cal_fitx(feature_s,s_size,dim)
+	s_accurcy=returnAccuracyList(s_size,x_train,x_test,y_train,y_test,feature_s,num_fe)
+	s_accurcy,s_pop=zip(*sorted(zip(s_accurcy,s_pop),reverse=True))
+	feature_map=make_feature(population_for_f(population,population_count,dim),population_count,dim)
+	fitx=cal_fitx(feature_map,population_count,dim)
+	saveInCSV(g,population,accuracy_list)'''
+	saveInCSV_mini(np.mean(fitx),np.mean(accuracy_list),population_count)
+	#===============================================================================================================
+weightedGA_plot_graph()

@@ -162,8 +162,7 @@ def population_for_f(population,population_count,dim):
 
 
 def saveInCSV_mini(feature_id,accuracy,population_count):
-	fname='../result1/Exactly/res.csv'
-	dim=29
+	fname='../result1/Exactly2/res.csv'
 	with open(fname,mode='a+') as result_file:
 		result_writer=csv.writer(result_file)
 		l=list()
@@ -174,7 +173,7 @@ def saveInCSV_mini(feature_id,accuracy,population_count):
 
 #saving the result
 def saveInCSV(feature_id,population,accuracy_list):
-	fname='../result1/Exactly/'+str(feature_id)+'.csv'
+	fname='../result1/Exactly2/'+str(feature_id)+'.csv'
 	for i in range(len(population)):
 		with open(fname,mode='a+') as result_file:
 			result_writer=csv.writer(result_file)
@@ -182,7 +181,7 @@ def saveInCSV(feature_id,population,accuracy_list):
 			l.append(population[i])
 			l.append(accuracy_list[i])
 			result_writer.writerow(l)
-		fname='../result1/Exactly/average.csv'
+		fname='../result1/Exactly2/average.csv'
 		with open(fname,mode='a+') as result_file:
 			result_writer=csv.writer(result_file)
 			l=list()
@@ -195,7 +194,7 @@ def saveInCSV(feature_id,population,accuracy_list):
 def weightedGA_plot_graph():
 	x=[]
 	y=[]
-	fname='../result1/Exactly/res.csv'
+	fname='../result1/Exactly2/res.csv'
 	cnt=0
 	with open(fname, 'r') as csvfile:
 		plots= csv.reader(csvfile, delimiter=',')
@@ -213,13 +212,13 @@ def weightedGA_plot_graph():
 
 #--------------------------------------------main fun-----------------------------
 
-Max_iter=7
+Max_iter=15
 g=0
 population_count=10
 dim=12
 population=init_population(population_count,dim)
 #reading training/testing datasets
-column_names,x,y,train_count=read.read('../Data/UCI_DATA-master/CSVformat/Exactly.csv')
+column_names,x,y,train_count=read.read('../Data/UCI_DATA-master/CSVformat/Exactly2.csv')
 x_train,x_test,y_train,y_test=train_test_split(x, y, test_size=0.20, random_state=1)
 print(len(x_train[0]))
 
