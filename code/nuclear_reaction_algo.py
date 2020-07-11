@@ -2,19 +2,22 @@
 import random
 from math import pi,log,pow,gamma,sin,sqrt,exp
 from cmath import phase
+import knn
 import svm
 import read
 import numpy as np
+import time,sys
 from sklearn.model_selection import train_test_split
 import matplotlib.pyplot as plt
 import csv
 from scipy.stats import norm
+import pandas as pd
 '''
     A variable rand_p determines reaction
 '''
 P_fi = 0.5 #probabiltiy of fission reaction
 P_beta = 0.75 #probability of beta decay
-folder="Zoo"
+folder="BreastEW"
 
 
 #--------------------------------------diracdelta fun------------------------------------------
@@ -303,7 +306,7 @@ def fitness(feature_map,dim):
 def cal_fitx(feature_map,population_count,dim):
 	fitX=list()
 	for i in range(population_count):
-		temp=fitness(feature_map[i],dim)
+		temp=sum(feature_map[i])
 		fitX.append(temp)
 	return fitX
 
@@ -349,7 +352,7 @@ def extractFeatures(x_train,x_test,feature_map):
 
 def returnAccuracy(x_train_cur,x_test_cur,y_train,y_test):
 	#training-testing
-	accuracy=svm.SVM(x_train_cur,y_train,x_test_cur,y_test)
+	accuracy=knn.KNN(x_train_cur,y_train,x_test_cur,y_test)
 	return accuracy
 
 def returnAccuracyList(count,x_train,x_test,y_train,y_test,feature_map,fitX):
@@ -383,7 +386,7 @@ def make_feature(population,population_count,dim):
 #------------------------------------save the result------------------------------------------------
 
 def saveInCSV_mini(feature_id,accuracy,population_count):
-	fname='../NRO_r/'+folder+'/res.csv'
+	fname='../NRO_knn/'+folder+'/res.csv'
 	dim=29
 	with open(fname,mode='a+') as result_file:
 		result_writer=csv.writer(result_file)
@@ -395,7 +398,7 @@ def saveInCSV_mini(feature_id,accuracy,population_count):
 
 #saving the result
 def saveInCSV(feature_id,population,accuracy_list):
-	fname='../NRO_r/'+folder+'/'+str(feature_id)+'.csv'
+	fname='../NRO_knn/'+folder+'/'+str(feature_id)+'.csv'
 	for i in range(len(population)):
 		with open(fname,mode='a+') as result_file:
 			result_writer=csv.writer(result_file)
@@ -403,7 +406,7 @@ def saveInCSV(feature_id,population,accuracy_list):
 			l.append(population[i])
 			l.append(accuracy_list[i])
 			result_writer.writerow(l)
-		fname='../NRO_r/'+folder+'/average.csv'
+		fname='../NRO_knn/'+folder+'/average.csv'
 		with open(fname,mode='a+') as result_file:
 			result_writer=csv.writer(result_file)
 			l=list()
@@ -427,7 +430,7 @@ def population_for_f(population,population_count,dim):
 def weightedGA_plot_graph():
 	x=[]
 	y=[]
-	fname='../NRO_r/'+folder+'/res.csv'
+	fname='../NRO_knn/'+folder+'/res.csv'
 	cnt=0
 	with open(fname, 'r') as csvfile:
 		plots= csv.reader(csvfile, delimiter=',')
@@ -457,9 +460,6 @@ freq=2;
 
 population=list()
 Pa=list()
-population=init_population(population_count,dim)
-#print(population)
-tempory=population;
 column_names=list()
 x_train=list()
 y_train=list()
@@ -470,8 +470,24 @@ accuracy_list=list()
 #reading training/testing datasets
 #column_names,x_train,y_train,train_count=read.read('../Data/1/train.csv')
 #column_names,x_test,y_test,test_count=read.read('../Data/1/test.csv')
-column_names,x,y,train_count=read.read('../Data/UCI_DATA-master/'+folder+'/'+folder+'.csv')
-x_train,x_test,y_train,y_test=train_test_split(x, y, test_size=0.20, random_state=1)
+#column_names,x,y,train_count=read.read('../Data/UCI_DATA-master/'+folder+'/'+folder+'.csv')
+#x_train,x_test,y_train,y_test=train_test_split(x, y, test_size=0.20, random_state=1)
+dataset='../Data/UCI_DATA-master/'+folder+'/'+folder+'.csv'
+#column_names,x,y,train_count=read.read('../Data/UCI_DATA-master/'+folder+'/'+folder+'.csv')
+#x_train,x_test,y_train,y_test=train_test_split(x, y, test_size=0.20, random_state=1)
+df = pd.read_csv(dataset)
+a, b = np.shape(df)
+data = df.values[:,0:b-1]
+label = df.values[:,b-1]
+dim = data.shape[1]
+        
+cross = 5
+test_size = (1/cross)
+x_train,x_test,y_train,y_test = train_test_split(data, label,stratify=label ,test_size=test_size,random_state=(7+17*int(time.time()%1000)))
+#iris = load_iris()
+population=init_population(population_count,dim)
+#print(population)
+tempory=population;
 print(len(x_train[0]))
 feature_map=make_feature(population,population_count,dim)
 fitx=cal_fitx(feature_map,population_count,dim)
@@ -561,6 +577,9 @@ while(g<Max_iter):
 
 	population=list(population_res[0:10])
 	accuracy_list=list(accuracy_res[0:10])
+	feature_map=make_feature(population_for_f(population,population_count,dim),population_count,dim)
+	fitx=cal_fitx(feature_map,population_count,dim)
+	number_fe=fitx
 	#print (np.asarray(population).shape,np.asarray(accuracy_list).shape)
 	saveInCSV(g,population,accuracy_list)
 
@@ -587,7 +606,8 @@ while(g<Max_iter):
 	
 	population.extend(population_new)
 	accuracy_list.extend(accuracy_list_new)
-	fitx,accuracy_res,population_res=zip(*sorted(zip(fitx,accuracy_list,population)))
+	number_fe.extend(fitx)
+	number_fe,accuracy_res,population_res=zip(*sorted(zip(number_fe,accuracy_list,population)))
 
 	accuracy_res,population_res=zip(*sorted(zip(accuracy_list,population),reverse=True))
 
@@ -598,6 +618,7 @@ while(g<Max_iter):
 	fitx=cal_fitx(feature_map,population_count,dim)
 	saveInCSV(g,population,accuracy_list)
 	saveInCSV_mini(np.mean(fitx),np.mean(accuracy_list),population_count)
+print("Accuracy :",accuracy_list[0])
 weightedGA_plot_graph()
 	#============================================================================================================
 
