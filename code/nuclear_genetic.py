@@ -17,7 +17,7 @@ import pandas as pd
 '''
 P_fi = 0.5 #probabiltiy of fission reaction
 P_beta = 0.75 #probability of beta decay
-folder="BreastEW"
+folder="WaveformEW"
 omega=0.9
 
 
@@ -298,7 +298,7 @@ def fitness(feature_map,dim,population_count,x_train,x_test,y_train,y_test):
 	result=list()
 	agent=cal_fitx(feature_map,population_count,dim)
 	accuracy_list=returnAccuracyList(population_count,x_train,x_test,y_train,y_test,feature_map,agent)
-	print(accuracy_list)
+	#print(accuracy_list)
 	for i in range(population_count):
 		set_cnt=agent[i]/dim
 		temp=accuracy_list[i]*omega+(1-set_cnt)*(1-omega)
@@ -399,7 +399,7 @@ def extractFeatures(x_train,x_test,feature_map):
 
 def returnAccuracy(x_train_cur,x_test_cur,y_train,y_test):
 	#training-testing
-	accuracy=knn.KNN(x_train_cur,y_train,x_test_cur,y_test)
+	accuracy=svm.SVM(x_train_cur,y_train,x_test_cur,y_test)
 	return accuracy
 
 def returnAccuracyList(count,x_train,x_test,y_train,y_test,feature_map,fitX):
@@ -551,9 +551,9 @@ fitX=fitness(feature_map,dim,population_count,x_train,x_test,y_train,y_test)
 x_train_cur,x_test_cur=extractFeatures(x_train,x_test,feature_map[0])
 accuracy=returnAccuracy(x_train_cur,x_test_cur,y_train,y_test)
 saveInCSV_mini(sum(feature_map[0]),accuracy,population_count)
-fitX_res,population_res=zip(*sorted(zip(fitX,population),reverse=True))
-population=list(population_res[0:10])
-fitX=list(fitX_res[0:10])
+#fitX_res,population_res=zip(*sorted(zip(fitX,population),reverse=True))
+#population=list(population_res[0:10])
+#fitX=list(fitX_res[0:10])
 #print(population[0][0])
 #print(sigmoid(population[0][0]))
 
