@@ -17,8 +17,14 @@ import pandas as pd
 '''
 P_fi = 0.5 #probabiltiy of fission reaction
 P_beta = 0.75 #probability of beta decay
-folder="Zoo"
+datasetname="PenglungEW"
 omega=0.9
+lamda=0.5
+alfa=0.99
+N1=6
+N2=2
+N3=2
+N4=5
 
 
 #--------------------------------------diracdelta fun------------------------------------------
@@ -37,6 +43,19 @@ def sigmoid(gamma):
         return 1 - 1/(1 + exp(gamma))
     else:
         return 1/(1 + exp(-gamma))
+
+
+#------------------------result between 0-1-------------------------------------------------------
+def population_for_f(population,population_count,dim):
+	temp=list()
+	for i in range(population_count):
+		x=list()
+		for j in range(dim):
+			x.append(sigmoid(population[i][j]))
+		temp.append(x)
+	return temp
+
+
 
 #initializing the population
 def init_population(population_count,dim):
@@ -293,84 +312,135 @@ def equ_no_22(i,alpha,bita,popuation):
     return result;
 
 
-#--------------------------------num_of_feature fun-----------------------------------------------------
-def fitness(feature_map,dim,population_count,x_train,x_test,y_train,y_test):
-	result=list()
-	agent=cal_fitx(feature_map,population_count,dim)
-	accuracy_list=returnAccuracyList(population_count,x_train,x_test,y_train,y_test,feature_map,agent)
-	#print(accuracy_list)
+#====================================================function for novel tree======================================================
+
+#---------------------------------------------1D initilization-----------------------------------------------------
+def intz(population,N1,dim):
+	x=list()
+	for j in range(dim):
+		p=random.randrange(N1)
+		d=random.randrange(dim)
+		x.append(population[p][d])
+	return x
+
+#--------------------------------------initilize the population----------------------------------------------------
+
+def init_population(population_count,dim):
+	population=list()
 	for i in range(population_count):
-		set_cnt=agent[i]/dim
-		temp=accuracy_list[i]*omega+(1-set_cnt)*(1-omega)
-		result.append(temp)
-		#print("Accuracy: ",accuracy_list[i]," N_F: ",agent[i]," fit: ",temp)
+		x=list()
+		for j in range(dim):
+			x.append(random.uniform(0,1))
+		population.append(x)
+	return population
+
+#-------------------------------------calculate theta-------------------------------------------------------------
+
+def calculate_theta(g,N):
+	theta=0.5*(1+g/N)
+	return theta
+
+#-----------------------------------update population--------------------------------------------------------------
+
+def update_population(theta,population,dim,N1):
+	result=list()
+	for i in range(N1):
+		x=list()
+		for d in range(dim):
+			temp=population[i][d]/theta+random.uniform(0,1)*population[i][d]
+			x.append(temp)
+		result.append(x)
 	return result
 
-#---------------------------num_feture for 2d--------------------------------------------------------
 
-def cal_fitx(feature_map,population_count,dim):
-	fitX=list()
-	for i in range(population_count):
-		temp=sum(feature_map[i])
-		fitX.append(temp)
-	return fitX
+#-----------------------------------------calculate value of d--------------------------------------------------------
 
-#---------------------------------sort a population----------------------------------------------
-def make_sort(tempory,fitX,population_count):
-	temp=fitX;
+def calculate_d(N1,N2,population,dim,it):
 	result=list()
-	temp.sort()
-	i=0
-	while (i<population_count):
-		key=temp[i]
-		for j in range(population_count):
-			if(fitX==temp):
-				result.append(tempory[j])
-		while(i<population_count and temp[i]==key):
-			i+=1;
-	return result;
+	sum=0
+	for d in range(dim):
+		for i in range(N1+N2):
+			sum+=(population[it][d]-population[i][d])**2
+		sum=sum**0.5
+		result.append(sum)
+	return result
 
+#--------------------------------update population in step 2---------------------------------------------------------
 
-#----------------------------------------------genetic Algo---------------------------------------------------
-def CrossOver(length):
-	pos=random.randint(0,length-1)
-	return pos
+def update_population1(i,y,dim,population):
+	result=list()
+	for d in range(dim):
+		temp=population[i][d]+alfa*y
+		result.append(temp)
+	return result
 
-def Mutation(length):
-	pos=random.randint(0,length-1)
-	return pos
+def step2_upadte(N1,N2,population,dim):
+	result=list()
+	for i in range(N1+N2):
+		distance=calculate_d(N1,N2,population,dim,i)
+		distance1=distance
+		distance.sort()
+		for d in range(dim):
+			if(distance1[d]==distance[0]):
+				x1=population[i][d]
+			if(distance1[d]==distance[1]):
+				x2=population[i][d]
+		y=lamda*x1+(1-lamda)*x2
+		pop=update_population1(i,y,dim,population)
+		result.append(pop)
+	return result
+#------------------------------------------------------------step4 update-----------------------------------------------
 
-
-def  flip(obj,pos):
-	f=0-obj[pos]
-	obj[pos]=f
-	return obj
-
-
-def geneticAlgo(tot_fts_count,cur_population,population_count):
-	new_population=list()
-	new_count=0
-	i=0
-	while i<population_count:
-		#finding cross-over and mutation points
-		crossOverPoint = CrossOver(tot_fts_count)
-		mutationPoint = Mutation(tot_fts_count)
-		#carrying it out
-		child1=list()
-		#print(np.asarray(cur_population[i]).shape)
-		child1.extend(cur_population[i][0:crossOverPoint])
-		if(i==population_count-1):
-			child1.extend(cur_population[0][crossOverPoint:])
+def mask(pop1,pop2,dim):
+	res=list()
+	for d in range(dim):
+		bit=random.randint(0,1)
+		if(bit==0):
+			res.append(pop1[d])
 		else:
-			child1.extend(cur_population[i+1][crossOverPoint:])
-		child1=flip(child1,mutationPoint)
-		#adding to new population
-		#print(child1)
-		if child1 not in cur_population and child1 not in new_population:
-			new_population.append(child1)
-			new_count+=1
-			i+=1
-	return new_population
+			res.append(pop2[d])
+	return res
+
+
+def step4_update(population,N1,dim,N4):
+	result=list()
+	for k in range(N4):
+		S=intz(population,N1,dim)
+		r=random.randrange(N1)
+		T=population[r]
+		pop=mask(S,T,dim)
+		result.append(pop)
+	return result
+
+
+
+
+#---------------------------------------features for 1D-----------------------------------------------------------
+
+def features_1D(pop,dim):
+	x=list()
+	sum=0
+	di=1/dim
+	for d in range(dim):
+		sum+=pop[d]
+	for d in range(dim):
+		temp=pop[d]/sum
+		if(temp>=di):
+			x.append(1)
+		else:
+			x.append(0)
+	return x
+
+
+#-------------------------------------make features-------------------------------------------------------------------
+
+def make_feature(population,population_count,dim):
+    result=list()
+    di=1/dim
+    for i in range(population_count):
+    	x=features_1D(population[i],dim)
+    	result.append(x)
+    return result
 
 
 #-------------------------------extracting fetures-------------------------------------------------
@@ -380,59 +450,46 @@ def extractFeatures(x_train,x_test,feature_map):
 	x_test_cur=list()
 
 	index_list = [i for i, val in enumerate(feature_map) if val]
-	#print("INDEX LIST:",np.asarray(index_list).shape)
 
 	#making new train set with new features
 	for j in range(len(x_train)):
 		res_list = [x_train[j][i] for i in index_list]
 		x_train_cur.append(res_list)
-	#print("X_TRAIN_CUR:",np.asarray(x_train_cur).shape)
 
-
-	#print(len(res_list[0]))
 	for j in range(len(x_test)):
 		res_list = [x_test[j][i] for i in index_list]
 		x_test_cur.append(res_list)
-	#print("X_TEST_CUR:",np.asarray(x_test_cur).shape)
+
 	return x_train_cur,x_test_cur
 
+#-----------------------------------------------fitness calculation in 1D--------------------------------------------
 
-def returnAccuracy(x_train_cur,x_test_cur,y_train,y_test):
-	#training-testing
-	accuracy=knn.KNN(x_train_cur,y_train,x_test_cur,y_test)
-	return accuracy
+def fitness_1D(feature,dim,x_train_cur,x_test_cur,y_train,y_test):
+	accuracy=svm.SVM(x_train_cur,y_train,x_test_cur,y_test)
+	set_count=sum(feature)/dim
+	set_cnt=1-set_count
+	val=accuracy*omega+set_cnt*(1-omega)
+	#print(set_count,"   ",accuracy,"  ",val)
+	return val,accuracy
 
-def returnAccuracyList(count,x_train,x_test,y_train,y_test,feature_map,fitX):
-	accuracy_list=list()
-	for i in range(count):
-		#print("FEATURE MAP :",i)
-		if(fitX[i]!=0):
+#--------------------------------------------calculate the fitnes-----------------------------------------------------
+
+def fitness(feature_map,population_count,dim,x_train,x_test,y_train,y_test):
+	result=list()
+	for i in range(population_count):
+		if(sum(feature_map[i])>0):
 			x_train_cur,x_test_cur=extractFeatures(x_train,x_test,feature_map[i])
-			accuracy=returnAccuracy(x_train_cur,x_test_cur,y_train,y_test)
+			fit,accuracy=fitness_1D(feature_map[i],dim,x_train_cur,x_test_cur,y_train,y_test)
 		else:
-			accuracy=0
-		accuracy_list.append(accuracy)
-	return accuracy_list
+			fit=0
+		result.append(fit)
+	return result
 
-#-------------------------------make features--------------------------------------------------
-
-def make_feature(population,population_count,dim):
-    result=list()
-    #print(temp)
-    for i in range(population_count):
-    	x=list()
-    	for j in range(dim):
-    		if(abs(population[i][j])>=0.5):
-    			x.append(1)
-    		else:
-    			x.append(0)
-    	result.append(x)
-    return result
 
 
 #------------------------------------save the result------------------------------------------------
 
-def saveInCSV_mini(feature_id,accuracy,population_count):
+def saveInCSV_mini(feature_id,accuracy,population_count,folder):
 	fname='../res1/'+folder+'.csv'
 	dim=29
 	with open(fname,mode='a+') as result_file:
@@ -443,33 +500,18 @@ def saveInCSV_mini(feature_id,accuracy,population_count):
 		l.append(accuracy)
 		result_writer.writerow(l)
 
-#saving the result
-def saveInCSV(feature_id,population,accuracy_list):
-	fname='../res_abta/'+folder+'/'+str(feature_id)+'.csv'
-	for i in range(len(population)):
-		with open(fname,mode='a+') as result_file:
-			result_writer=csv.writer(result_file)
-			l=list()
-			l.append(population[i])
-			l.append(accuracy_list[i])
-			result_writer.writerow(l)
-		fname='../res_abta/'+folder+'/average.csv'
-		with open(fname,mode='a+') as result_file:
-			result_writer=csv.writer(result_file)
-			l=list()
-			l.append(feature_id)
-			l.append(np.mean(accuracy_list))
-			result_writer.writerow(l)
+#-------------------------------------------check the result--------------------------------------
 
-#------------------------result between 0-1-------------------------------------------------------
-def population_for_f(population,population_count,dim):
-	temp=list()
+def check_result(feature_map,population_count,dim,x_train,x_test,y_train,y_test):
+	fitX=list()
+	accuracy_list=list()
 	for i in range(population_count):
-		x=list()
-		for j in range(dim):
-			x.append(sigmoid(population[i][j]))
-		temp.append(x)
-	return temp
+		x_train_cur,x_test_cur=extractFeatures(x_train,x_test,feature_map[i])
+		fit,accuracy=fitness_1D(feature_map[i],dim,x_train_cur,x_test_cur,y_train,y_test)
+		fitX.append(fit)
+		accuracy_list.append(accuracy)
+	print("No.of Features: ",sum(feature_map[0]),"Accuracy: ",accuracy_list[0],"FitNess: ",fitX[0])
+	saveInCSV_mini(sum(feature_map[0]),accuracy_list[0],population_count,datasetname)
 
 
 #--------------------------------------------------------graph--------------------------------------
@@ -477,7 +519,7 @@ def population_for_f(population,population_count,dim):
 def weightedGA_plot_graph():
 	x=[]
 	y=[]
-	fname='../res1/'+folder+'.csv'
+	fname='../res1/'+datasetname+'.csv'
 	cnt=0
 	with open(fname, 'r') as csvfile:
 		plots= csv.reader(csvfile, delimiter=',')
@@ -497,7 +539,7 @@ def weightedGA_plot_graph():
 #--------------------------------main fun---------------------------------------------------------
 
 #initialize the value of lb,ub,population_count,Max_iter,g
-Max_iter=100;
+Max_iter=50;
 g=1;
 population_count=10;
 lbd=0;
@@ -507,21 +549,12 @@ freq=2;
 
 population=list()
 Pa=list()
-column_names=list()
-x_train=list()
-y_train=list()
-x_test=list()
-y_test=list()
 accuracy_list=list()
 
 #reading training/testing datasets
-#column_names,x_train,y_train,train_count=read.read('../Data/1/train.csv')
-#column_names,x_test,y_test,test_count=read.read('../Data/1/test.csv')
-#column_names,x,y,train_count=read.read('../Data/UCI_DATA-master/'+folder+'/'+folder+'.csv')
-#x_train,x_test,y_train,y_test=train_test_split(x, y, test_size=0.20, random_state=1)
-dataset='../Data/UCI_DATA-master/'+folder+'/'+folder+'.csv'
-#column_names,x,y,train_count=read.read('../Data/UCI_DATA-master/'+folder+'/'+folder+'.csv')
-#x_train,x_test,y_train,y_test=train_test_split(x, y, test_size=0.20, random_state=1)
+
+dataset='../Data/UCI_DATA-master/'+datasetname+'/'+datasetname+'.csv'
+
 df = pd.read_csv(dataset)
 a, b = np.shape(df)
 data = df.values[:,0:b-1]
@@ -532,30 +565,18 @@ tot_fts_count=dim-1
 cross = 5
 test_size = (1/cross)
 x_train,x_test,y_train,y_test = train_test_split(data, label,stratify=label ,test_size=test_size,random_state=(7+17*int(time.time()%1000)))
-#iris = load_iris()
+
 population=init_population(population_count,dim)
-#print(population)
+
 tempory=population;
 print(len(x_train[0]))
 feature_map=make_feature(population_for_f(population,population_count,dim),population_count,dim)
-#fitx=cal_fitx(feature_map,population_count,dim)
-
-#print(feature_map)
 
 #----------------------------------------------------------------
 #evaluate the fitness funtion
 #------------------------------------------------------------------
-#print("OLD_POPULATION:",np.asarray(population).shape)
-#accuracy_list=returnAccuracyList(population_count,x_train,x_test,y_train,y_test,feature_map,fitx)
-fitX=fitness(feature_map,dim,population_count,x_train,x_test,y_train,y_test)
-x_train_cur,x_test_cur=extractFeatures(x_train,x_test,feature_map[0])
-accuracy=returnAccuracy(x_train_cur,x_test_cur,y_train,y_test)
-saveInCSV_mini(sum(feature_map[0]),accuracy,population_count)
-#fitX_res,population_res=zip(*sorted(zip(fitX,population),reverse=True))
-#population=list(population_res[0:10])
-#fitX=list(fitX_res[0:10])
-#print(population[0][0])
-#print(sigmoid(population[0][0]))
+fitX=fitness(feature_map,population_count,dim,x_train,x_test,y_train,y_test)
+check_result(feature_map,population_count,dim,x_train,x_test,y_train,y_test)
 
 Ne=list()
 Pc=list()
@@ -580,19 +601,17 @@ while(g<Max_iter):
 	#calculate the fit X
 	#========================================================================================================
 	feature_map=make_feature(population_for_f(population_new,population_count,dim),population_count,dim)
-	#fitx=cal_fitx(feature_map,population_count,dim)
-	#print(feature_map)
-	#print("After Fission:",np.asarray(population).shape)
-	#accuracy_list_new=returnAccuracyList(population_count,x_train,x_test,y_train,y_test,feature_map,fitx)
-	fitX_new=fitness(feature_map,dim,population_count,x_train,x_test,y_train,y_test)
+	fitX_new=fitness(feature_map,population_count,dim,x_train,x_test,y_train,y_test)
 	
 	population.extend(population_new)
 	fitX.extend(fitX_new)
 
 	fitX_res,population_res=zip(*sorted(zip(fitX,population),reverse=True))
+	#print(fitX_res)
 
 	population=list(population_res[0:10])
 	fitX=list(fitX_res[0:10])
+	#print(fitX)
 	#=======================================================================================================
 
 
@@ -619,11 +638,7 @@ while(g<Max_iter):
 	#calculate the fit X
 	#========================================================================================================
 	feature_map=make_feature(population_for_f(population_new,population_count,dim),population_count,dim)
-	#print(feature_map)
-	#print("After Fission:",np.asarray(population).shape)
-	#accuracy_list_new=returnAccuracyList(population_count,x_train,x_test,y_train,y_test,feature_map,fitx)
-
-	fitX_new=fitness(feature_map,dim,population_count,x_train,x_test,y_train,y_test)
+	fitX_new=fitness(feature_map,population_count,dim,x_train,x_test,y_train,y_test)
 	
 	population.extend(population_new)
 	fitX.extend(fitX_new)
@@ -649,10 +664,7 @@ while(g<Max_iter):
 
 	#========================================================================================================
 	feature_map=make_feature(population_for_f(population_new,population_count,dim),population_count,dim)
-	#print("After Ionization:",np.asarray(population).shape)
-	#accuracy_list_new=returnAccuracyList(population_count,x_train,x_test,y_train,y_test,feature_map,fitx)
-	
-	fitX_new=fitness(feature_map,dim,population_count,x_train,x_test,y_train,y_test)
+	fitX_new=fitness(feature_map,population_count,dim,x_train,x_test,y_train,y_test)
 	
 	population.extend(population_new)
 	fitX.extend(fitX_new)
@@ -661,29 +673,54 @@ while(g<Max_iter):
 
 	population=list(population_res[0:10])
 	fitX=list(fitX_res[0:10])
+	#print(fitX)
 	#===========================================================================================================
-	population_new=geneticAlgo(tot_fts_count,population,population_count)
-	#========================================================================================================
-	feature_map=make_feature(population_for_f(population_new,population_count,dim),population_count,dim)
-	#print(feature_map)
-	#print("After Fission:",np.asarray(population).shape)
-	#accuracy_list_new=returnAccuracyList(population_count,x_train,x_test,y_train,y_test,feature_map,fitx)
-	fitX_new=fitness(feature_map,dim,population_count,x_train,x_test,y_train,y_test)
-	
-	population.extend(population_new)
+	theta=calculate_theta(g,Max_iter)
+	population_new=update_population(theta,population,dim,N1)
+	feature_map=make_feature(population_for_f(population_new,N1,dim),N1,dim)
+	fitX_new=fitness(feature_map,N1,dim,x_train,x_test,y_train,y_test)
+	pop=population[0:N1]
+	fitn=fitX[0:N1]
+	population_new.extend(pop)
+	fitX_new.extend(fitn)
+	fitX_res,population_res=zip(*sorted(zip(fitX_new,population_new),reverse=True))
+	for i in range(N1):
+		if(fitX[i]<fitX_res[i]):
+			fitX[i]=fitX_res[i]
+			population[i]=population_res[i]
+	#===============================================================================================
+	population_new=step2_upadte(N1,N2,population,dim)
+	feature_map=make_feature(population_for_f(population_new,N2,dim),N2,dim)
+	fitX_new=fitness(feature_map,N2,dim,x_train,x_test,y_train,y_test)
+	pop=population[N1:N1+N2]
+	fitn=fitX[N1:N1+N2]
+	population_new.extend(pop)
+	fitX_new.extend(fitn)
+	fitX_res,population_res=zip(*sorted(zip(fitX_new,population_new),reverse=True))
+	for i in range(N1,N1+N2):
+		if(fitX[i]<fitX_res[i-N1]):
+			fitX[i]=fitX_res[i-N1]
+			population[i]=population_res[i-N1]
+	#===============================================================================================
+	population_new=init_population(N3,dim)
+	feature_map=make_feature(population_for_f(population,N3,dim),N3,dim)
+	fitX_new=fitness(feature_map,N3,dim,x_train,x_test,y_train,y_test)
+	for i in range(N1+N2,population_count):
+		population[i]=population_new[i-N1-N2]
+		fitX[i]=fitX_new[i-N1-N2]
+	#===============================================================================================
+	population_new=step4_update(population,N1,dim,N4)
+	feature_map=make_feature(population_for_f(population_new,N4,dim),N4,dim)
+	fitX_new=fitness(feature_map,N4,dim,x_train,x_test,y_train,y_test)
 	fitX.extend(fitX_new)
-
+	population.extend(population_new)
 	fitX_res,population_res=zip(*sorted(zip(fitX,population),reverse=True))
-
-	population=list(population_res[0:10])
-	fitX=list(fitX_res[0:10])
-	feature_map=make_feature(population_for_f(population,1,dim),1,dim)
-	fit=sum(feature_map[0])
-	x_train_cur,x_test_cur=extractFeatures(x_train,x_test,feature_map[0])
-	accuracy=returnAccuracy(x_train_cur,x_test_cur,y_train,y_test)
-	saveInCSV_mini(fit,accuracy,population_count)
+	for i in range(population_count):
+		if(fitX_res[i]>fitX[i]):
+			fitX[i]=fitX_res[i]
+			population[i]=population_res[i]
+	print(fitX)
+	feature_map=make_feature(population_for_f(population,population_count,dim),population_count,dim)
+	check_result(feature_map,population_count,dim,x_train,x_test,y_train,y_test)
 	#=======================================================================================================
-print("Accuracy :",accuracy)
-print("features :",fit)
-weightedGA_plot_graph()
-	#============================================================================================================
+#weightedGA_plot_graph()
